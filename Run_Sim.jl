@@ -32,35 +32,38 @@ tally1 = Flux_tally(energy_bins = tally_grid, radius=100)
 
 material1 = Material(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.6,0.6], density = 4.0,id=1);
 
-tally_grid = [i for i=1e6:2e6:2e8];
 
-tally1 = Flux_tally(energy_bins = tally_grid)
-
-#simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=50)
+simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
 
 #@time runMovie(simulation1)
 
-#=
+
 println("Vanila MC")
 a = @time runPar(simulation1);
 
+#plotTally(a)
+tally1 = Flux_tally(energy_bins = tally_grid)
 simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
 
 println("TMC")
 b = @time runTotalMonteCarlo(simulation1,10);
+#b= @time runFlySampling(simulation1);
 
-simulation1 = juliaMC(material=material1,n=1000000, Tally_batch=tally1,n_batch=10)
-=#
-#println("FlySampling")
-#c = @time runFlySampling(simulation1);
+tally1 = Flux_tally(energy_bins = tally_grid)
+simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
 
-#plotTally(b,c,a)
+
+println("FlySampling")
+c = @time runFlySampling(simulation1);
+
+plotTally(b,c,a)
 
 #plotTally(c)
 
+#=
 #a=[1,5,10,50,100,500,1000,5000]
 
-a = [10000, 50000, 100000, 500000, 1000000,5000000,10000000,50000000,100000000,500000000]
+a = [1000000,5000000,10000000,50000000,100000000,500000000]
 tal = zeros(length(a))
 index=1
 c=deepcopy(tally1)
@@ -83,6 +86,7 @@ end
 
 #println(tal)
 
-answer = plot(a,tal);
+answer = plot(a,tal, dpi=300, size=(1000,1000));
 
 savefig(answer, "Answer3.png")
+=#

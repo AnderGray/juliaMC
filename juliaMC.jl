@@ -164,7 +164,9 @@ function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
         simulation = deepcopy(sim)
         for j = 1:sim.material.n_nuclides
             for k =1:length(sim.material.nucs[j].XS)
-                simulation.material.nucs[j].XS[k].xs=sim.material.nucs[k].XS[k].xs*rand(Truncated(Normal(1,0.5),0.3,100))
+                #simulation.material.nucs[j].XS[k].xs=sim.material.nucs[k].XS[k].xs*rand(Truncated(Normal(1,0.5),0.3,100))
+                simulation.material.nucs[j].XS[k].xs=sim.material.nucs[j].XS[k].xs + rand(Truncated(Normal(0,0.3),-0.8,0.8))*sim.material.nucs[j].XS[k].xs 
+                
             end
         end
         Tally = runPar(simulation)
@@ -209,7 +211,8 @@ function runFlySampling(sim :: juliaMC)
                 N_bank = generate(sim.source,sim.material,10000)
                 o = 1
             end
-            perturb = rand(Truncated(Normal(1,2),0.3,100))
+            #perturb=rand(Truncated(Normal(1,0.5),0.3,100))
+            perturb = rand(Truncated(Normal(0,0.3),-0.8,0.8))
             while N_bank[o].alive == true
                 N_bank[o] = transportUQ(N_bank[o],perturb);
                 if norm(N_bank[o].xyz)>sim.Tally_batch.radius
