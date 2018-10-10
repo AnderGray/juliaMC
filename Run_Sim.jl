@@ -1,7 +1,10 @@
+using Distributed
+using SharedArrays
+@everywhere using LinearAlgebra
 include("juliaMC.jl");
 
 en_grid = [i for i=1e6:2e5:3e8];
-function xs(x,A) 
+function xs(x,A)
     if x<14.e7
         y=(2e8*cos.(3.0*x).*pdf.(Normal(A,1e7),x)-5e-8x +3)+20;
     else
@@ -26,14 +29,13 @@ nuclide2 = Nuclide(Name="Fe54",XS=[scat2,absp2]);
 
 material1 = Material(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.6,0.6], density = 4.0,id=1);
 
-tally_grid = [i for i=1e6:2e6:3e8];
+tally_grid = [i for i=1e6:2e5:3e8];
 
-tally1 = Flux_tally(energy_bins = tally_grid, radius=100)
+tally1 = Flux_tally(energy_bins = tally_grid)
 
 material1 = Material(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.6,0.6], density = 4.0,id=1);
 
-
-simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
+simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10)
 
 #@time runMovie(simulation1)
 
@@ -41,17 +43,12 @@ simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10
 println("Vanila MC")
 a = @time runPar(simulation1);
 
-#plotTally(a)
-tally1 = Flux_tally(energy_bins = tally_grid)
-simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
+simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10)
 
 println("TMC")
 b = @time runTotalMonteCarlo(simulation1,10);
-#b= @time runFlySampling(simulation1);
 
-tally1 = Flux_tally(energy_bins = tally_grid)
-simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
-
+simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10)
 
 println("FlySampling")
 c = @time runFlySampling(simulation1);
@@ -59,24 +56,23 @@ c = @time runFlySampling(simulation1);
 plotTally(b,c,a)
 
 #plotTally(c)
-
 #=
 #a=[1,5,10,50,100,500,1000,5000]
 
-a = [1000000,5000000,10000000,50000000,100000000,500000000]
+a = [10000, 50000, 100000, 500000, 1000000,5000000,10000000,50000000,100000000,500000000]
 tal = zeros(length(a))
 index=1
 c=deepcopy(tally1)
 for i in a
-    
+
     simulation1 = juliaMC(material=material1,n=i, Tally_batch=tally1,n_batch=10)
     c=runFlySampling(simulation1)
     p = zeros(length(c.Tally))
-    
+
 
     #println(c.std)
     #println(c.Tally)
-     
+
     for j = 1:length(c.Tally)-28
         p[j] = c.std[j]/c.Tally[j]
     end
@@ -86,7 +82,8 @@ end
 
 #println(tal)
 
-answer = plot(a,tal, dpi=300, size=(1000,1000));
+answer = plot(a,tal);
 
 savefig(answer, "Answer3.png")
+
 =#
