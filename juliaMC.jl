@@ -213,7 +213,7 @@ function runFlySampling(sim :: juliaMC)
                 o = 1
             end
             #perturb = rand(Truncated(Normal(1,0.5),0.3,100))
-            perturb=rand()+0.5
+            perturb=rand(2,2).+0.5
             while N_bank[o].alive == true
                 N_bank[o] = transportUQ(N_bank[o],perturb);
                 if norm(N_bank[o].xyz)>sim.Tally_batch.radius

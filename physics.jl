@@ -75,7 +75,7 @@ function transportUQ(p :: Particle, perturb)
         if p.E < 1e6
             p.alive = false
             p.wgt = 0;
-            p.last_E = 1.42e8;port monte carlo code for performing numerical experiements for Uncertainty P
+            p.last_E = 1.42e8;
             #println("Particle $(p.id) has lost too much energy at $(p.xyz)")
         end
 

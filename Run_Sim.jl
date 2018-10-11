@@ -35,7 +35,7 @@ tally1 = Flux_tally(energy_bins = tally_grid)
 
 material1 = Material(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.6,0.6], density = 4.0,id=1);
 
-simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10)
+simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
 
 #@time runMovie(simulation1)
 
@@ -43,12 +43,12 @@ simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10)
 println("Vanila MC")
 a = @time runPar(simulation1);
 
-simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10)
+simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
 
 println("TMC")
-b = @time runTotalMonteCarlo(simulation1,10);
+b = @time runTotalMonteCarlo(simulation1,100);
 
-simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10)
+simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=100)
 
 println("FlySampling")
 c = @time runFlySampling(simulation1);

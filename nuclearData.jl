@@ -23,7 +23,7 @@ function (obj::Cross_section)(E :: Float64)
     x1=obj.energy_grid[inx+1];
 
     XS_e = y0+(E - x0)*(y1-y0)/(x1-x0);
-     
+
     obj.last_xs_value = XS_e
 
     return XS_e
@@ -70,11 +70,11 @@ function (obj :: Nuclide)(E :: Float64)
 end
 
 
-function (obj :: Nuclide)(E :: Float64, Peturb :: Float64)
+function (obj :: Nuclide)(E :: Float64, Peturb)
 
     T_micro_xs = 0
     for i = 1:length(obj.XS)
-        T_micro_xs += obj.XS[i](E, Peturb)
+        T_micro_xs += obj.XS[i](E, Peturb[i])
     end
     obj.last_T_xs_value = T_micro_xs
     return T_micro_xs
