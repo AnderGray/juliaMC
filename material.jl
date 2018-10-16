@@ -1,10 +1,16 @@
+####
+#
+#   Material Class, including two methods for passing interpolation request to nuclides
+#
+#   Julia Version: V1.0
+####
 @with_kw mutable struct Material
 
     # Properties of the Material
     # Manditory are: nuclides, atomic_density and density
 
     name :: String                                                         # Name of material
-    nuclides :: Array{Any,1} = ["",:]                                    # Array of Nuclides names contained in the material
+    nuclides :: Array{Any,1} = ["",:]                                      # Array of Nuclides names contained in the material
     nucs :: Array{Nuclide,1}                                               # Array of Nuclides contained in the material
     atomic_density :: Array{Float64,1}                                     # The Atomic densities of the nuclides in atom/b-cm²
     density :: Float64                                                     # The Total Density of the material in g/cm³
@@ -12,7 +18,7 @@
     id :: Int = 0                                                          # For multi material problems
     n_nuclides :: Int64  = 0                                               # Number of nuclides contained
 
-    last_macro :: Float64 = 0.0
+    last_macro :: Float64 = 0.0                                            # Last interpolated MacroXS
 
 
     T_atomic :: Float64 = 0.0                                       # The Total Atomic denisty in atom/b-cm²
@@ -44,6 +50,7 @@
 
     end
 
+# Passing interpolation request nuclides class and storing result
 function (obj :: Material)(E :: Float64)
 
     T_macro_xs=0
@@ -58,6 +65,7 @@ function (obj :: Material)(E :: Float64)
 
 end
 
+# Passing interpolation request nuclides class and storing result for ad hoc sampling
 function (obj :: Material)(E :: Float64, Peturb)
 
     T_macro_xs=0

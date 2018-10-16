@@ -1,6 +1,9 @@
-# Simple flux tally in a volume sphere who's radius and centre are to be defined
-# To tally flux we sum the path lengths of the particles traveled in the volume and devide by the volume
-
+####
+#
+#   Tally class and plotters
+#
+#   Julia Version: V1.0
+####
 @with_kw mutable struct Flux_tally
 
     n :: Int = 10                                           # This must be the number of batches in the simulation
@@ -35,6 +38,10 @@ end
 
 function plotTally(Tal1 :: Flux_tally, Tal2 :: Flux_tally, Tal3 :: Flux_tally)
 
+
+    # Tal1 == TMC
+    # Tal2 == FLY
+    # Tal3 == Vinila
     en = (Tal1.energy_bins[2:end]+Tal1.energy_bins[1:end-1])/2;
 
     a=Tal2.Tally./Tal1.Tally;
@@ -99,6 +106,7 @@ function plotTally(Tal1 :: Flux_tally, Tal2 :: Flux_tally, Tal3 :: Flux_tally)
 
     display(fig)
     savefig(fig,"Result100_MIl_batch.png")
+
     #plot(plt1,plt2,plt3,plt4)
     #=
     savefig(plt1, "means.png")

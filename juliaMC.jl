@@ -1,21 +1,32 @@
+####
+#
+#   This file contains the constructor for the juliaMC simulation class + simulation functions
+#
+#   Julia Version: V1.0
+#
+#       By: Ander Gray,         University of Liverpool, Culham Centre for Fusion Energy
+####
+
 @everywhere using Parameters;
 @everywhere using Distributions;
 #using PyPlot;
 @everywhere using Plots;
+using DataFrames;
+using CSV;
 gr()
 
-@everywhere include("nuclearData.jl");
-@everywhere include("material.jl");
-@everywhere include("particle.jl");
-@everywhere include("source.jl");
-@everywhere include("physics.jl");
-@everywhere include("maths.jl");
-@everywhere include("tally.jl");
+@everywhere include("nuclearData.jl");      #contains nuclide + crossection classes. Methods for querying XS are contained
+@everywhere include("material.jl");         #contains material class
+@everywhere include("particle.jl");         #contains particle class (probably overfill for this small application)
+@everywhere include("source.jl");           #source class, includes generate method for genertaing a particle bank
+@everywhere include("physics.jl");          #Contains transport() + transportUQ() functions for transporting particles
+@everywhere include("maths.jl");            #contains maths. Interpolator + a descete_cdf class and sampler
+@everywhere include("tally.jl");            #contains tally class
 
 
-#=
-Object that holds the simulation parameters, the constructor ensures that the dimension of tally is the same as the number of batches in the simulation.
-The parameters are as follos:
+#=  juliaMC class
+Object that holds the simulation parameters.
+The parameters are as follows:
 
 n: Number of particles per batch
 
@@ -28,8 +39,9 @@ N_bank: An array of particles that is used for the simulation. This is generated
 
 Tall_batch: The Tally to be used in the simulation
 
-=#
+@with_kw is for defining default values for properties of a class
 
+=#
 @everywhere @with_kw struct juliaMC
 
     n :: Int64 = 1000
@@ -40,6 +52,7 @@ Tall_batch: The Tally to be used in the simulation
     Tally_batch :: Flux_tally
 
 
+    #Constructor
     function juliaMC(n :: Int64, n_batch :: Int64, source :: Source, material :: Material, Tally_batch :: Flux_tally)
 
         Tally = Flux_tally(n=n_batch, energy_bins = Tally_batch.energy_bins,radius = Tally_batch.radius)
@@ -51,7 +64,8 @@ end
 
 
 
-
+# This function is outdated, now using runPar for both serial and parallel
+# THIS FUNCTION IS UNUSED
 @everywhere function runSim(sim :: juliaMC)
 
     en = (sim.Tally_batch.energy_bins[2:end]+sim.Tally_batch.energy_bins[1:end-1])/2
@@ -97,48 +111,50 @@ end
 end
 
 
-
+##function performing a monte-carlo simulation in parallel
 function runPar(sim :: juliaMC)
 
     #en = (sim.Tally_batch.energy_bins[2:end]+sim.Tally_batch.energy_bins[1:end-1])/2
 
-    Tal = SharedArray{Float64,2}(length(sim.Tally_batch.energy_bins)-1,sim.n_batch)                     #
+    ## Shared array used in parallel loop for storing tally information of each loop
+    Tal = SharedArray{Float64,2}(length(sim.Tally_batch.energy_bins)-1,sim.n_batch)
     counter = SharedArray{Float64,1}(1)
-    counter = 0;
+    counter = 0;    #a loop counter, could be removed
 
+    #main loop.
     @sync @distributed for j=1:sim.n_batch
     #    for j=1:sim.n_batch
         #N_bank = generate(sim.source,sim.material,sim.n)
-        memLimit=10000;
-        localTal = zeros(length(sim.Tally_batch.energy_bins)-1)
-        N_bank = generate(sim.source,sim.material,memLimit)
-        o = 1;
-        for i=1:sim.n
-            if i % memLimit == 0
+        memLimit=10000;                                             # This defines the maximum number of particles used in the bank at once. For saving RAM
+        localTal = zeros(length(sim.Tally_batch.energy_bins)-1)     # The local tally of the parallel loop
+        N_bank = generate(sim.source,sim.material,memLimit)         # The local particle bank of the loop, generate() found in source.jl
+        o = 1;                                                      # o is the index for the particle bank, modulo memlimit
+        for i=1:sim.n                                               # loop for particle bank
+            if i % memLimit == 0                                    # resets the particle bank after exceeding memlimit
                 N_bank = generate(sim.source,sim.material,memLimit)
                 o = 1
             end
             while N_bank[o].alive == true
-                N_bank[o] = transport(N_bank[o]);
-                if norm(N_bank[o].xyz)>sim.Tally_batch.radius
+                N_bank[o] = transport(N_bank[o]);                   # transport function for simulation, found in physics.jl
+                if norm(N_bank[o].xyz)>sim.Tally_batch.radius       # has left tally volume?
                     N_bank[o].alive=false;
                 else
-                    k = findInter(N_bank[o].last_E, sim.Tally_batch.energy_bins);
-                    localTal[k] += N_bank[o].last_d*N_bank[o].wgt
+                    k = findInter(N_bank[o].last_E, sim.Tally_batch.energy_bins);   # selects which energy bin to score. Function can be found in maths.jl
+                    localTal[k] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
                 end
                 end
             o+=1;
             end
         counter +=1
-        Tal[:,j] = localTal;
+        Tal[:,j] = localTal;                                # add local tally to global
         println("Finished Batch $j") #make counter $j
         #println(localTal)
     end
 
-    Tal=Tal./(sim.Tally_batch.volume*sim.n);
+    Tal=Tal./(sim.Tally_batch.volume*sim.n);                    # normalize flux
     #plot(en, Tal)
-    Global_tally = Flux_tally(energy_bins=sim.Tally_batch.energy_bins,n=1);
 
+    Global_tally = Flux_tally(energy_bins=sim.Tally_batch.energy_bins,n=1);     # create new tally instance using global tally statistics
     for i = 1:length(sim.Tally_batch.Tally[:,1])
 
         Global_tally.Tally[i] = mean(Tal[i,:]);
@@ -152,7 +168,7 @@ end
 
 
 
-
+## Total Monte-Carlo function. n is the number of TMC runs
 function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
 
     m = length(sim.Tally_batch.energy_bins)-1
@@ -161,26 +177,28 @@ function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
     means = zeros(m,n)
     stds = zeros(m,n)
 
+    # outer TMC-loop
     for i =1:n
-        simulation = deepcopy(sim)
-        for j = 1:sim.material.n_nuclides
+        simulation = deepcopy(sim)                      # deepcopy makes a new instance of juliaMC: changing simulation has no effect on sim
+        for j = 1:sim.material.n_nuclides               # random purtubation of the XS before inner loop
             for k =1:length(sim.material.nucs[j].XS)
                 #simulation.material.nucs[j].XS[k].xs=sim.material.nucs[k].XS[k].xs*rand(Truncated(Normal(1,0.5),0.3,100))
-                simulation.material.nucs[j].XS[k].xs=sim.material.nucs[k].XS[k].xs*(rand()+0.5)
+                simulation.material.nucs[j].XS[k].xs=sim.material.nucs[k].XS[k].xs*(rand()+0.5)     # sampling is done uniformly between 0.5-1.5 of the origional XS
             end
         end
-        Tally = runPar(simulation)
+        Tally = runPar(simulation)          # Inner TMC loop
 
         println("<------Finished Iteration $i------>")
 
-        means[:,i] = Tally.Tally
+        means[:,i] = Tally.Tally            # collection of means and stds of independant runs
         stds[:,i] = Tally.std
     end
     for l=1:m
         Global.Tally[l] = mean(means[l,:])
-        Global.std[l] = sqrt(mean(stds[l,:].^2) + std(means[l,:]).^2)
+        Global.std[l] = sqrt(mean(stds[l,:].^2) + std(means[l,:]).^2)       # TMC uncertainty
     end
 
+    ## removing memory. gc() is for garbage collection in V0.6, not sure about V1.0
     Tally=0;
     means=0;
     stds=0;
@@ -192,12 +210,12 @@ function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
 
 end
 
-
+## main Function for ad hoc sampling of the Crossection. The crossections are perturbed per history as opposed to per simulation
+## as in TMC. This function is very simular to runPar(), however uses transportUQ() as instead of transport().
 function runFlySampling(sim :: juliaMC)
-    en = (sim.Tally_batch.energy_bins[2:end]+sim.Tally_batch.energy_bins[1:end-1])/2
 
+    #en = (sim.Tally_batch.energy_bins[2:end]+sim.Tally_batch.energy_bins[1:end-1])/2
     Tal = SharedArray{Float64,2}(length(sim.Tally_batch.energy_bins)-1,sim.n_batch)
-
 
     @sync @distributed for j=1:sim.n_batch
         #simulation = deepcopy(sim)
@@ -213,9 +231,9 @@ function runFlySampling(sim :: juliaMC)
                 o = 1
             end
             #perturb = rand(Truncated(Normal(1,0.5),0.3,100))
-            perturb=rand(2,2).+0.5
+            perturb=rand(2,2).+0.5                              # 2*2 matrix of samples, 2 nuclides * 2 crossections
             while N_bank[o].alive == true
-                N_bank[o] = transportUQ(N_bank[o],perturb);
+                N_bank[o] = transportUQ(N_bank[o],perturb);     # transportUQ() function in physics.jl. Inputs a particle and random sample matrix
                 if norm(N_bank[o].xyz)>sim.Tally_batch.radius
                     N_bank[o].alive=false;
                 else
@@ -248,7 +266,7 @@ end
 
 
 
-
+## function for making gif animation of simulation against wall clock time
 function runMovie(sim :: juliaMC)
 
     en = (sim.Tally_batch.energy_bins[2:end]+sim.Tally_batch.energy_bins[1:end-1])/2

@@ -1,23 +1,34 @@
+####
+#
+#   Conatains transport() and transportUQ() functions for transport of particles
+#   using vanila monte-carlo and ad hoc sampling
+#
+#   Also contained are functions for selecting nulicides and reactions, and an
+#   elastic scattering function
+#
+#   Julia Version: V1.0
+####
 function transport(p :: Particle)
 
     E = p.E
-    Total_Macro = p.mat(E)
-    d = -log(rand())/Total_Macro
+    Total_Macro = p.mat(E)                      # interpolation of XS and construction on MacroXS
+    d = -log(rand())/Total_Macro                # distance to next collision
 
+    # pre-collision details stored
     p.last_xyz = p.xyz
     p.last_E = E
     p.last_wgt = p.wgt
     p.last_uvw = p.uvw
     p.last_d = d
 
+    # new particle position. p.uvw always of unit length
     p.xyz=p.uvw*d
 
 
     #println("Particle has traveld $d and is now at $(p.xyz)")
 
-    s = select(p.mat);
-    r = select(p.mat.nucs[s]);
-
+    s = select(p.mat);                       # first select nuclide
+    r = select(p.mat.nucs[s]);               # then reaction. Select() has been overloaded.
     react = p.mat.nucs[s].XS[r].reaction
 
     if react == "elastic_scatter"
@@ -27,16 +38,14 @@ function transport(p :: Particle)
         if p.E < 1e6
             p.alive = false
             p.wgt = 0;
-            p.last_E = 1.42e8;
+            p.last_E = 1.42e8;          # cannot remember why I did this...
             #println("Particle $(p.id) has lost too much energy at $(p.xyz)")
         end
 
     elseif react == "absorption"
         p.alive = false
         p.last_reaction="absorption"
-
         #println("absorption at $(p.xyz)")
-
     else
         error("Something has gone terribly wrong")
     end
@@ -48,7 +57,7 @@ end
 function transportUQ(p :: Particle, perturb)
 
     E = p.E
-
+    # only difference to transport(). Perturbation passed right down to XS interpolator
     Total_Macro = p.mat(E, perturb)
     d = -log(rand())/Total_Macro
 
@@ -94,11 +103,15 @@ function transportUQ(p :: Particle, perturb)
 end
 
 
+# Function for selecting a nuclide in the material for reaction
+# NOTE: energy does not need to be passed here. XS only interpolated once and
+# stored in last_T_xs_value
 function select(mat :: Material)
 
     n=length(mat.nucs)
     cdf_values = zeros(n+1,1)
 
+    # cdf values taken to be the macroscopic XS of each nuclide
     for i =1:n
         cdf_values[i+1] = mat.nucs[i].last_T_xs_value.*mat.weights[i].+cdf_values[i]
     end
@@ -106,6 +119,7 @@ function select(mat :: Material)
     cdf_values=filter(e->e!=0.0,cdf_values)
     cdf_values=cdf_values/mat.last_macro
 
+    # Descrete cdf created and sampled
     dist = Descrete_CDF(mat.nucs,cdf_values)
     nad, selection = dist()
 
@@ -115,16 +129,19 @@ function select(mat :: Material)
     return selection
 end
 
+# selection of XS in nuclide
 function select(nuc :: Nuclide)
 
     n=length(nuc.XS)
     cdf_values = zeros(n+1,1)
+
+    #cdf constructed from microscopic XS of reactions
     for i =1:n
         cdf_values[i+1] = nuc.XS[i].last_xs_value+cdf_values[i]
     end
     cdf_values=filter(e->e!=0.0,cdf_values)
     cdf_values=cdf_values/nuc.last_T_xs_value
-    a = Array{String, 1}(UndefInitializer(),n)
+    a = Array{String, 1}(UndefInitializer(),n)          # intitalization of a array of strings
     for i =1:n
         a[i]=nuc.XS[i].reaction
     end
@@ -142,7 +159,7 @@ end
 function scatter(p :: Particle)
 
     direction_Inclination = Uniform(0,2pi)          # Spherical coordinates for direction, the default is an
-    direction_Azamuthal = Uniform(0,pi)             # istropic distribution
+    direction_Azamuthal = Uniform(0,pi)             # isotropic distribution. THIS COULD BE BIASED
 
     d_Inc = rand(direction_Inclination)           # also be sampled here but will just be a point source for the time being
     d_Az = rand(direction_Azamuthal)
@@ -156,7 +173,7 @@ function scatter(p :: Particle)
     #println("The sampled direction is $directions")
 
 
-    p.E = p.E - rand()*p.E;
+    p.E = p.E - rand()*p.E;     # reduce energy by a random amount
     p.uvw = directions[:];
     p.last_reaction="scatter"
 

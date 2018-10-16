@@ -1,7 +1,9 @@
-
-# In here all of the nuclear data business will be done. We will have a nuclide object, a crossection object, and a summed crossection object. We should also have place to hold and the exit probabilities of reactions. We should also make use of a feature of julia that is we can treat some objects like functions. So to the crossection object we can ask it for an energy and it should do all of the interpolation within that object
-
-
+####
+#
+#   Crossection and Nuclide classes including interpolators
+#
+#   Julia Version: V1.0
+####
 @with_kw mutable struct Cross_section
     mt :: Int32
     reaction :: String
@@ -11,8 +13,7 @@
 end
 
 
-# This function will find the crossection at point E by linear interpolation,
-# There is also an interpolation package in the julia Math package
+# Linear interpolation of XS
 function (obj::Cross_section)(E :: Float64)
 
     inx = findInter(E, obj.energy_grid)
@@ -41,7 +42,7 @@ function (obj::Cross_section)(E :: Float64, Peturb :: Float64)
 
     XS_e = y0+(E - x0)*(y1-y0)/(x1-x0);
 
-    XS_e = XS_e*Peturb
+    XS_e = XS_e*Peturb          # purtubation of xs after interpolation
 
     obj.last_xs_value = XS_e
 

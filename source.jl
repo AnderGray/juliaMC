@@ -1,5 +1,9 @@
-# inmutable composite type for particle source
-
+####
+#
+#   Source class and generate function
+#
+#   Julia Version: V1.0
+####
 @with_kw struct Source
 
     E_distribution :: Sampleable = Truncated(Normal(14.2e7,6e6),1e6+1,3e8-1)   # The distribution of neutron energies, default set to normal
@@ -21,6 +25,7 @@ end
         bank[i]=Particle(id=i, mat = mat)           # Loop that fills the bank will default neutrons
     end
 
+    # Delta dirac in energy
     Energys = 14.2e7*ones(n)#rand(s.E_distribution, m)             # Sampling of the Sources energy and direction distributions, position can
     d_Inc = rand(s.direction_Inclination,n)         # also be sampled here but will just be a point source for the time being
     d_Az = rand(s.direction_Azamuthal,n)
