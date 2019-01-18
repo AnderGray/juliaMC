@@ -65,6 +65,20 @@ function (obj :: Material)(E :: Float64)
 
 end
 
+function (obj :: Material)(indx :: Int64, E :: Float64)
+
+    T_macro_xs=0
+
+    for i = 1:obj.n_nuclides
+        T_macro_xs += obj.weights[i].*obj.nucs[i](indx,E)
+    end
+
+    obj.last_macro = T_macro_xs
+
+    return T_macro_xs
+
+end
+
 # Passing interpolation request nuclides class and storing result for ad hoc sampling
 function (obj :: Material)(E :: Float64, Peturb)
 

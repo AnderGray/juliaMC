@@ -18,7 +18,7 @@ end
 
 # The generate function will generate a particle bank of length n from a source distribution s. This function could be altered later to also generate secondary neutrons to be added to an existing particel bank
 
-@everywhere function generate(s :: Source, mat :: Material, n :: Int64)
+@everywhere function generate(s :: Source, mat :: Material, n :: Int64, grid :: Array{Float64,1})
 
     bank = Array{Particle,1}(UndefInitializer(),n)              # Initialization of particle bank array
     for i in 1:n
@@ -38,6 +38,7 @@ end
 
     for i in 1:n
         bank[i].E = Energys[i]                      # Filling the particle bank with sampled information.
+        bank[i].energyIndex = binarySearch(Energys[i], grid)
         bank[i].xyz = s.position
         bank[i].uvw = directions[i,:]
     end

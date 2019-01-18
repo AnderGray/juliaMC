@@ -11,7 +11,9 @@
 function transport(p :: Particle)
 
     E = p.E
-    Total_Macro = p.mat(E)                      # interpolation of XS and construction on MacroXS
+    ind = p.energyIndex
+    #Total_Macro = p.mat(E)                      # interpolation of XS and construction on MacroXS
+    Total_Macro = p.mat(ind,E)
     d = -log(rand())/Total_Macro                # distance to next collision
 
     # pre-collision details stored
@@ -109,18 +111,21 @@ end
 function select(mat :: Material)
 
     n=length(mat.nucs)
-    cdf_values = zeros(n+1,1)
+    cdf_values = zeros(n+1)
 
     # cdf values taken to be the macroscopic XS of each nuclide
     for i =1:n
         cdf_values[i+1] = mat.nucs[i].last_T_xs_value.*mat.weights[i].+cdf_values[i]
     end
-    #println(cdf_values)
-    cdf_values=filter(e->e!=0.0,cdf_values)
-    cdf_values=cdf_values/mat.last_macro
-
+    #cdf_values=filter(e->e!=0.0,cdf_values)
+    cdf_values=cdf_values./mat.last_macro
     # Descrete cdf created and sampled
-    dist = Descrete_CDF(mat.nucs,cdf_values)
+
+    a = Array{String, 1}(UndefInitializer(),n)          # intitalization of a array of strings
+    for i =1:n
+        a[i]=mat.nuclides[i]
+    end
+    dist = Descrete_CDF(a,cdf_values)
     nad, selection = dist()
 
 
@@ -133,13 +138,13 @@ end
 function select(nuc :: Nuclide)
 
     n=length(nuc.XS)
-    cdf_values = zeros(n+1,1)
+    cdf_values = zeros(n+1)
 
     #cdf constructed from microscopic XS of reactions
     for i =1:n
         cdf_values[i+1] = nuc.XS[i].last_xs_value+cdf_values[i]
     end
-    cdf_values=filter(e->e!=0.0,cdf_values)
+    #cdf_values=filter(e->e!=0.0,cdf_values)
     cdf_values=cdf_values/nuc.last_T_xs_value
     a = Array{String, 1}(UndefInitializer(),n)          # intitalization of a array of strings
     for i =1:n

@@ -48,16 +48,17 @@ Tall_batch: The Tally to be used in the simulation
     n_batch :: Int64 = 10
     source :: Source = Source()
     material :: Material
+    grid :: Array{Float64,1}
     #N_bank :: Array{Particle, 2} = generate(source, material, n, n_batch)
     Tally_batch :: Flux_tally
 
 
     #Constructor
-    function juliaMC(n :: Int64, n_batch :: Int64, source :: Source, material :: Material, Tally_batch :: Flux_tally)
+    function juliaMC(n :: Int64, n_batch :: Int64, source :: Source, material :: Material, grid :: Array{Float64,1}, Tally_batch :: Flux_tally)
 
         Tally = Flux_tally(n=n_batch, energy_bins = Tally_batch.energy_bins,radius = Tally_batch.radius)
 
-        new(n, n_batch, source, material, Tally)
+        new(n, n_batch, source, material, Tally_batch.energy_bins, Tally)
     end
 
 end
@@ -75,7 +76,7 @@ end
 
 
     for j=1:sim.n_batch
-        N_bank = generate(sim.source,sim.material,sim.n)
+        N_bank = generate(sim.source,sim.material,sim.n, obj.grid)
         localTal = zeros(length(sim.Tally_batch.energy_bins)-1)
         for i=1:sim.n
             while N_bank[i].alive == true
@@ -83,7 +84,8 @@ end
                 if norm(N_bank[i].xyz)>sim.Tally_batch.radius
                     N_bank[i].alive=false;
                 else
-                    k = findInter(N_bank[i].last_E, sim.Tally_batch.energy_bins);
+                    k = binarySearch(N_bank[i].last_E, sim.Tally_batch.energy_bins);
+                    N_bank[i].energyIndex = k
                     localTal[k] += N_bank[i].last_d*N_bank[i].wgt
                 end
                 end
@@ -127,11 +129,11 @@ function runPar(sim :: juliaMC)
         #N_bank = generate(sim.source,sim.material,sim.n)
         memLimit=10000;                                             # This defines the maximum number of particles used in the bank at once. For saving RAM
         localTal = zeros(length(sim.Tally_batch.energy_bins)-1)     # The local tally of the parallel loop
-        N_bank = generate(sim.source,sim.material,memLimit)         # The local particle bank of the loop, generate() found in source.jl
+        N_bank = generate(sim.source,sim.material,memLimit, sim.grid)         # The local particle bank of the loop, generate() found in source.jl
         o = 1;                                                      # o is the index for the particle bank, modulo memlimit
         for i=1:sim.n                                               # loop for particle bank
             if i % memLimit == 0                                    # resets the particle bank after exceeding memlimit
-                N_bank = generate(sim.source,sim.material,memLimit)
+                N_bank = generate(sim.source,sim.material,memLimit,sim.grid)
                 o = 1
             end
             while N_bank[o].alive == true
@@ -139,7 +141,8 @@ function runPar(sim :: juliaMC)
                 if norm(N_bank[o].xyz)>sim.Tally_batch.radius       # has left tally volume?
                     N_bank[o].alive=false;
                 else
-                    k = findInter(N_bank[o].last_E, sim.Tally_batch.energy_bins);   # selects which energy bin to score. Function can be found in maths.jl
+                    k = binarySearch(N_bank[o].last_E, sim.Tally_batch.energy_bins);   # selects which energy bin to score. Function can be found in maths.jl
+                    N_bank[o].energyIndex = k
                     localTal[k] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
                 end
                 end
@@ -204,7 +207,7 @@ function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
     stds=0;
     simulation=0;
     sim=0;
-    #gc()
+    gc()
 
     return Global
 

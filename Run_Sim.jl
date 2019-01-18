@@ -45,31 +45,31 @@ nuclide2 = Nuclide(Name="Fe54",XS=[scat2,absp2]);
 material1 = Material(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.6,0.6], density = 4.0,id=1);
 
 ## Energy grid for tally class
-tally_grid = [i for i=1e6:2e4:3e8];
+tally_grid = [i for i=1e6:2e5:3e8];
 tally1 = Flux_tally(energy_bins = tally_grid)
 
 ## material and tally are properties of the juliaMC class
 
-simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
+simulation1 = juliaMC(material=material1,n=100000, grid = en_grid, Tally_batch=tally1, n_batch=10)
 #@time runMovie(simulation1)    ##option to make gif of sim, warning: takes for ever
 println("Vanila MC")
 a = @time runPar(simulation1);
 
-simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
+simulation1 = juliaMC(material=material1,n=100000, grid = en_grid, Tally_batch=tally1,n_batch=10)
 println("TMC")
 b = @time runTotalMonteCarlo(simulation1,100);
 
-simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=100)
+simulation1 = juliaMC(material=material1,n=100000, grid = en_grid, Tally_batch=tally1,n_batch=100)
 println("FlySampling")
 c = @time runFlySampling(simulation1);
 
 #For creating plot
 plotTally(b,c,a)
 
-#For saving in csv format. HDF5 preferible but not currently compatible with risk cluster
-en = (tally_grid[2:end]+tally_grid[1:end-1])/2;
-df = DataFrame(energy=en[1:end], XSTMC = b.Tally[1:end], stdTMC= b.std[1:end],XSFLY = c.Tally[1:end], stdFLY = c.std[1:end], XSVIN = a.Tally[1:end],stdVIN = a.std[1:end])
-CSV.write("simulationSave.csv",df);
+##For saving in csv format. HDF5 preferible but not currently compatible with risk cluster
+#en = (tally_grid[2:end]+tally_grid[1:end-1])/2;
+#df = DataFrame(energy=en[1:end], XSTMC = b.Tally[1:end], stdTMC= b.std[1:end],XSFLY = c.Tally[1:end], stdFLY = c.std[1:end], XSVIN = a.Tally[1:end],stdVIN = a.std[1:end])
+#CSV.write("simulationSave.csv",df);
 
 #plotTally(c)
 #=

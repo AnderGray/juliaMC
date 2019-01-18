@@ -18,6 +18,7 @@
 
     #Physical Properties
     E :: Float64 = 0                            # Particles energy in eV
+    energyIndex :: Int64 = -1
     wgt :: Float64 = 1                          # Weight of the particle for non-analogue
     alive :: Bool = true                        # The state of the particles existance
 
