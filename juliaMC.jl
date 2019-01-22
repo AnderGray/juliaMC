@@ -47,14 +47,14 @@ Tall_batch: The Tally to be used in the simulation
     n :: Int64 = 1000
     n_batch :: Int64 = 10
     source :: Source = Source()
-    material :: Material
+    material :: Material_Tendl
     grid :: Array{Float64,1}
     #N_bank :: Array{Particle, 2} = generate(source, material, n, n_batch)
     Tally_batch :: Flux_tally
 
 
     #Constructor
-    function juliaMC(n :: Int64, n_batch :: Int64, source :: Source, material :: Material, grid :: Array{Float64,1}, Tally_batch :: Flux_tally)
+    function juliaMC(n :: Int64, n_batch :: Int64, source :: Source, material :: Material_Tendl, grid :: Array{Float64,1}, Tally_batch :: Flux_tally)
 
         Tally = Flux_tally(n=n_batch, energy_bins = Tally_batch.energy_bins,radius = Tally_batch.radius)
 
@@ -114,7 +114,7 @@ end
 
 
 ##function performing a monte-carlo simulation in parallel
-function runPar(sim :: juliaMC)
+function runPar(sim :: juliaMC, Choice :: Array{Int64,1})
 
     #en = (sim.Tally_batch.energy_bins[2:end]+sim.Tally_batch.energy_bins[1:end-1])/2
 
@@ -137,14 +137,15 @@ function runPar(sim :: juliaMC)
                 o = 1
             end
             while N_bank[o].alive == true
-                N_bank[o] = transport(N_bank[o]);                   # transport function for simulation, found in physics.jl
+                N_bank[o] = transport(N_bank[o],Choice);                   # transport function for simulation, found in physics.jl
                 if norm(N_bank[o].xyz)>sim.Tally_batch.radius       # has left tally volume?
                     N_bank[o].alive=false;
                 else
-                    k = binarySearch(N_bank[o].E, sim.Tally_batch.energy_bins);   # selects which energy bin to score. Function can be found in maths.jl
+                    k = binarySearch(N_bank[o].E, sim.grid);       # selects which energy bin to score. Function can be found in maths.jl
                     N_bank[o].energyIndex = k
-                    m = N_bank[o].last_index
-                    if k ==-1
+                    #m = N_bank[o].last_index
+                    m = binarySearch(N_bank[o].last_E, sim.Tally_batch.energy_bins);
+                    if k ==-1 || m == -1
                         N_bank[o].alive = false
                         N_bank[o].wgt = 0;
                     end
@@ -193,14 +194,21 @@ function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
 
     # outer TMC-loop
     for i =1:n
+
         simulation = deepcopy(sim)                      # deepcopy makes a new instance of juliaMC: changing simulation has no effect on sim
+        #=
         for j = 1:sim.material.n_nuclides               # random purtubation of the XS before inner loop
             for k =1:length(sim.material.nucs[j].XS)
                 #simulation.material.nucs[j].XS[k].xs=sim.material.nucs[k].XS[k].xs*rand(Truncated(Normal(1,0.5),0.3,100))
                 simulation.material.nucs[j].XS[k].xs=sim.material.nucs[k].XS[k].xs*(rand()+0.5)     # sampling is done uniformly between 0.5-1.5 of the origional XS
             end
+        en
+        =#
+        choice = zeros(Int64,sim.material.n_nuclides)
+        for pp =1:sim.material.n_nuclides
+            choice[pp] = rand(DiscreteUniform(1,sim.material.n_files[pp]))
         end
-        Tally = runPar(simulation)          # Inner TMC loop
+        Tally = runPar(simulation,choice)          # Inner TMC loop
 
         println("<------Finished Iteration $i------>")
 
@@ -218,7 +226,7 @@ function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
     stds=0;
     simulation=0;
     sim=0;
-    #gc()
+    GC.gc();
 
     return Global
 
@@ -245,16 +253,20 @@ function runFlySampling(sim :: juliaMC)
                 o = 1
             end
             #perturb = rand(Truncated(Normal(1,0.5),0.3,100))
-            perturb=rand(2,2).+0.5                              # 2*2 matrix of samples, 2 nuclides * 2 crossections
+            choice = zeros(Int64,sim.material.n_nuclides)
+            for pp =1:sim.material.n_nuclides
+                choice[pp] = rand(DiscreteUniform(1,sim.material.n_files[pp]))
+            end
             while N_bank[o].alive == true
-                N_bank[o] = transportUQ(N_bank[o],perturb);     # transportUQ() function in physics.jl. Inputs a particle and random sample matrix
+                N_bank[o] = transportUQ(N_bank[o],choice);     # transportUQ() function in physics.jl. Inputs a particle and random sample matrix
                 if norm(N_bank[o].xyz)>sim.Tally_batch.radius
                     N_bank[o].alive=false;
                 else
-                    k = binarySearch(N_bank[o].E, sim.Tally_batch.energy_bins);
+                    k = binarySearch(N_bank[o].E, sim.grid);       # selects which energy bin to score. Function can be found in maths.jl
                     N_bank[o].energyIndex = k
-                    m = N_bank[o].last_index
-                    if k ==-1
+                    #m = N_bank[o].last_index
+                    m = binarySearch(N_bank[o].last_E, sim.Tally_batch.energy_bins);
+                    if k ==-1 || m == -1
                         N_bank[o].alive = false
                         N_bank[o].wgt = 0;
                     end

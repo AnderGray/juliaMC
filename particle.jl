@@ -10,7 +10,7 @@
     #Particle information
     id :: Int32 = 0                             # So the particle can be tracked throughout the simulation
     Type :: Char = 'n'                          # i.e (n, p, e, ...)
-    mat :: Material                             # The material the particle currenty is in
+    mat :: Material_Tendl                       # The material the particle currenty is in
 
     #Particle Coordinates
     xyz :: Array{Float64,1}=[0,0,0]             # Carteesian Position
@@ -29,6 +29,7 @@
     last_wgt :: Float64 = 0
     last_reaction :: String = ""
     last_d :: Float64 = 0
+    last_d_bounds :: Array{Float64,1} = [0.0,0.0]
     last_index :: Int64 = -1
 
     end

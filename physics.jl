@@ -18,6 +18,7 @@ function transport(p :: Particle)
     println(E)
     =#
     #Total_Macro = p.mat(E)                      # interpolation of XS and construction on MacroXS
+    #Total_Macro = p.mat(ind,E)
     Total_Macro = p.mat(ind,E)
     d = -log(rand())/Total_Macro                # distance to next collision
 
@@ -64,19 +65,88 @@ function transport(p :: Particle)
 
 end
 
-function transportUQ(p :: Particle, perturb)
+function transport(p :: Particle, Sample :: Array{Int64,1})
+
+    E = p.E
+    ind = p.energyIndex
+    #=
+    println("before")
+    println(ind)
+    println(E)
+    =#
+    #Total_Macro = p.mat(E)                      # interpolation of XS and construction on MacroXS
+    #Total_Macro = p.mat(ind,E)
+    temp = p.mat(ind, E, Sample)
+    Total_Macro = temp[1]
+    Total_bounds = temp[2]
+    ran = rand()
+    d = -log(ran)/Total_Macro
+    d_bounds = -log(ran)./Total_bounds
+    d_bounds = sort(d_bounds)
+
+    # pre-collision details stored
+    p.last_xyz = p.xyz
+    p.last_E = E
+    p.last_wgt = p.wgt
+    p.last_uvw = p.uvw
+    p.last_d = d
+    p.last_d_bounds = d_bounds
+    p.last_index = ind
+
+    # new particle position. p.uvw always of unit length
+    p.xyz=p.uvw*d
+
+
+    #println("Particle has traveld $d and is now at $(p.xyz)")
+
+    s = select(p.mat);                       # first select nuclide
+    r = select(p.mat.nucs[s]);               # then reaction. Select() has been overloaded.
+    react = p.mat.nucs[s].XS[r].reaction
+
+    if react == "elastic_scatter"
+        p = scatter(p)
+        #println("scatter at $(p.xyz)")
+#=
+        if p.E < 1e6
+            p.alive = false
+            p.wgt = 0;
+            #p.last_E = 1.42e8;          # cannot remember why I did this...
+            #println("Particle $(p.id) has lost too much energy at $(p.xyz)")
+        end
+        =#
+
+    elseif react == "absorption"
+        p.alive = false
+        p.wgt=0
+        p.last_reaction="absorption"
+        #println("absorption at $(p.xyz)")
+    else
+        error("Something has gone terribly wrong")
+    end
+
+    return p
+
+end
+
+function transportUQ(p :: Particle, Sample)
 
     E = p.E
     ind = p.energyIndex
     # only difference to transport(). Perturbation passed right down to XS interpolator
-    Total_Macro = p.mat(ind, E, perturb)
-    d = -log(rand())/Total_Macro
+    temp = p.mat(ind, E, Sample)
+    Total_Macro = temp[1]
+    Total_bounds = temp[2]
+    ran = rand()
+    d = -log(ran)/Total_Macro
+    d_bounds = -log(ran)./Total_bounds
+    d_bounds = sort(d_bounds)
 
     p.last_xyz = p.xyz
     p.last_E = E
     p.last_wgt = p.wgt
     p.last_uvw = p.uvw
     p.last_d = d
+    p.last_d_bounds = d_bounds
     p.last_index = ind
 
     p.xyz=p.uvw*d
@@ -119,7 +189,7 @@ end
 # Function for selecting a nuclide in the material for reaction
 # NOTE: energy does not need to be passed here. XS only interpolated once and
 # stored in last_T_xs_value
-function select(mat :: Material)
+function select(mat :: Material_Tendl)
 
     n=length(mat.nucs)
     cdf_values = zeros(n+1)
@@ -129,9 +199,10 @@ function select(mat :: Material)
         cdf_values[i+1] = mat.nucs[i].last_T_xs_value.*mat.weights[i].+cdf_values[i]
     end
     #cdf_values=filter(e->e!=0.0,cdf_values)
-    cdf_values=cdf_values./mat.last_macro
+    a=sum(cdf_values)
+    cdf_values=cdf_values./a
     # Descrete cdf created and sampled
-
+    #println(cdf_values)
     a = Array{String, 1}(UndefInitializer(),n)          # intitalization of a array of strings
     for i =1:n
         a[i]=mat.nuclides[i]
@@ -146,7 +217,7 @@ function select(mat :: Material)
 end
 
 # selection of XS in nuclide
-function select(nuc :: Nuclide)
+function select(nuc :: Nuclide_Tendl)
 
     n=length(nuc.XS)
     cdf_values = zeros(n+1)

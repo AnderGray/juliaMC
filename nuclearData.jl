@@ -96,14 +96,29 @@ end
 # Linear interpolation of XS. E should be index here.
 #function (obj::Cross_section_Tendl)(ran :: Int64 ,inx :: Int64)
 
-function (obj::Cross_section_Tendl)(E :: Float64)
+function (obj::Cross_section_Tendl)(E :: Float64, Sample :: Int64)
 
     inx = binarySearch(E, obj.energy_grid)
 
-    y0=obj.xs[ran,inx];
-    y1=obj.xs[rand,inx+1];
+    y0=obj.xs[Sample,inx];
+    y1=obj.xs[Sample,inx+1];
     x0=obj.energy_grid[inx];
     x1=obj.energy_grid[inx+1];
+
+    XS_e = y0+(E - x0)*(y1-y0)/(x1-x0);
+
+    obj.last_xs_value = XS_e
+
+    return XS_e
+
+end
+
+function (obj::Cross_section_Tendl)(indx :: Int64, E :: Float64, Sample :: Int64)
+
+    y0=obj.xs[Sample,indx];
+    y1=obj.xs[Sample,indx+1];
+    x0=obj.energy_grid[indx];
+    x1=obj.energy_grid[indx+1];
 
     XS_e = y0+(E - x0)*(y1-y0)/(x1-x0);
 
@@ -164,7 +179,59 @@ function (obj :: Nuclide)(indx::Int64, E :: Float64, Peturb)
     return T_micro_xs
 end
 
+####must be changed below
 
+@with_kw mutable struct Nuclide_Tendl
+
+    Name :: String
+    XS :: Array{Cross_section_Tendl,1}
+    total_micro :: Cross_section_Tendl
+    total_bounds :: Array{Cross_section,1}
+    last_T_xs_value :: Float64 = 0           # The last calculated XS value, so we don't have to interpolate again
+    last_Total :: Float64 = 0
+    last_Bounds :: Array{Float64,1} = [0.0,]
+end
+
+
+function (obj :: Nuclide_Tendl)(E :: Float64, Sample :: Int64)
+
+    T_micro_xs = 0
+    realTotal = 0
+    bounds = [0.0,0.0]
+    for i = 1:length(obj.XS)
+        T_micro_xs += obj.XS[i](E, Sample)
+    end
+    obj.last_T_xs_value = T_micro_xs
+
+    realTotal = obj.total_micro(E, Sample)
+    for i =1:2
+        bounds[i]=obj.total_bounds[i](E)
+    end
+    obj.last_Total=realTotal
+    obj.last_Bounds=bounds
+
+    return realTotal, bounds
+end
+
+function (obj :: Nuclide_Tendl)(indx::Int64, E :: Float64, Sample :: Int64)
+
+    T_micro_xs = 0
+    realTotal = 0
+    bounds = [0.0,0.0]
+    for i = 1:length(obj.XS)
+        T_micro_xs += obj.XS[i](indx, E, Sample)
+    end
+    obj.last_T_xs_value = T_micro_xs
+
+    realTotal = obj.total_micro(indx, E, Sample)
+    for i =1:2
+        bounds[i]=obj.total_bounds[i](indx, E)
+    end
+    obj.last_Total=realTotal
+    obj.last_Bounds=bounds
+
+    return realTotal, bounds
+end
 
 # NOT USING THE BELOW
 

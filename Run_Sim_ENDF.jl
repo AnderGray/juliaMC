@@ -73,43 +73,64 @@ end
 
 println("<------Nuclear Data read------>")
 
+totalMaxFe = zeros(length(energy));
+totalMinFe = zeros(length(energy));
+totalMaxO = zeros(length(energy));
+totalMinO = zeros(length(energy));
+
+for i = 1:length(energy)
+    totalMaxFe[i]=findmax(totalFe[:,i])[1];
+    totalMinFe[i]=findmin(totalFe[:,i])[1];
+    totalMaxO[i]=findmax(totalO[:,i])[1];
+    totalMinO[i]=findmin(totalO[:,i])[1];
+end
+
 total1 = Cross_section_Tendl(mt=1,reaction="total",energy_grid=energy, xs=totalFe);
+totalMaxFe_xs = Cross_section(mt=1, reaction = "totalMax",energy_grid=energy, xs=totalMaxFe);
+totalMinFe_xs = Cross_section(mt=1, reaction = "totalMin",energy_grid=energy, xs=totalMinFe);
 scat1 = Cross_section_Tendl(mt=2,reaction="elastic_scatter",energy_grid=energy, xs=scatFe);
 absp1 = Cross_section_Tendl(mt=27,reaction="absorption",energy_grid=energy, xs= abspFe);
 
 total2 = Cross_section_Tendl(mt=1,reaction="total",energy_grid=energy, xs=totalO);
+totalMaxO_xs = Cross_section(mt=1, reaction = "totalMax",energy_grid=energy, xs=totalMaxO);
+totalMinO_xs = Cross_section(mt=1, reaction = "totalMin",energy_grid=energy, xs=totalMinO);
 scat2 = Cross_section_Tendl(mt=2,reaction="elastic_scatter",energy_grid=energy, xs=scatO);
 absp2 = Cross_section_Tendl(mt=27,reaction="absorption",energy_grid=energy, xs= abspO);
 
 totalFe = 0;
+totalMaxFe=0;
+totalMinFe=0;
 scatFe = 0;
 abspFe = 0;
 
 totalO = 0;
+totalMaxO = 0;
+totalMinO = 0;
 scatO = 0;
 abspO = 0;
 GC.gc();
 
-nuclide1 = Nuclide(Name="Fe56",XS=[total1,scat1,absp1]);
-nuclide2 = Nuclide(Name="O16",XS=[total2,scat2,absp2]);
+nuclide1 = Nuclide_Tendl(Name="Fe56",XS=[scat1,absp1],total_micro=total1,total_bounds=[totalMaxFe_xs,totalMinFe_xs]);
+nuclide2 = Nuclide_Tendl(Name="O16",XS=[scat2,absp2],total_micro=total2,total_bounds=[totalMaxO_xs,totalMinO_xs]);
 
-material1 = Material(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.6,0.6], density = 4.0,id=1);
+material1 = Material_Tendl(name="IronMixture", nucs=[nuclide1], atomic_density = [0.6], density = 4.0,id=1);
 
 ## Energy grid for tally
-tally1 = Flux_tally(energy_bins = energy)
+en_grid = [i for i=0:2e5:2e8];
+tally1 = Flux_tally(energy_bins = en_grid)
 
 ## material and tally are properties of the juliaMC class
 
-simulation1 = juliaMC(material=material1,n=1000, Tally_batch=tally1,n_batch=10)
+simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10,grid = energy)
 #@time runMovie(simulation1)    ##option to make gif of sim, warning: takes for ever
 println("Vanila MC")
-a = @time runPar(simulation1);
+a = @time runPar(simulation1,[1,1]);
 
-simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=10)
+simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10,grid = energy)
 println("TMC")
 b = @time runTotalMonteCarlo(simulation1,100);
 
-simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=100)
+simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=100,grid = energy)
 println("FlySampling")
 c = @time runFlySampling(simulation1);
 
