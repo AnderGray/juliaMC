@@ -73,11 +73,11 @@ end
 
 println("<------Nuclear Data read------>")
 
-total1 = Cross_section_Tendl(mt=1,reaction="total",energy_grid=energy, xs= totalFe);
+total1 = Cross_section_Tendl(mt=1,reaction="total",energy_grid=energy, xs=totalFe);
 scat1 = Cross_section_Tendl(mt=2,reaction="elastic_scatter",energy_grid=energy, xs=scatFe);
 absp1 = Cross_section_Tendl(mt=27,reaction="absorption",energy_grid=energy, xs= abspFe);
 
-total2 = Cross_section_Tendl(mt=1,reaction="total",energy_grid=energy, xs= totalO);
+total2 = Cross_section_Tendl(mt=1,reaction="total",energy_grid=energy, xs=totalO);
 scat2 = Cross_section_Tendl(mt=2,reaction="elastic_scatter",energy_grid=energy, xs=scatO);
 absp2 = Cross_section_Tendl(mt=27,reaction="absorption",energy_grid=energy, xs= abspO);
 

@@ -93,3 +93,17 @@ function (obj :: Material)(E :: Float64, Peturb)
     return T_macro_xs
 
 end
+
+function (obj :: Material)(indx::Int64, E :: Float64, Peturb)
+
+    T_macro_xs=0
+
+    for i = 1:obj.n_nuclides
+        T_macro_xs += obj.weights[i].*obj.nucs[i](indx, E, Peturb[i,:])
+    end
+
+    obj.last_macro = T_macro_xs
+
+    return T_macro_xs
+
+end

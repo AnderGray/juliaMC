@@ -58,15 +58,16 @@ a = @time runPar(simulation1);
 simulation1 = juliaMC(material=material1,n=100000, grid = en_grid, Tally_batch=tally1,n_batch=10)
 println("TMC")
 b = @time runTotalMonteCarlo(simulation1,100);
-#=
-simulation1 = juliaMC(material=material1,n=1000, grid = en_grid, Tally_batch=tally1,n_batch=10)
+
+
+simulation1 = juliaMC(material=material1,n=100000, grid = en_grid, Tally_batch=tally1,n_batch=100)
 println("FlySampling")
 c = @time runFlySampling(simulation1);
 
-=#
+
 #For creating plot
 #plotTally(b,c)
-plotTally(b,a,a)
+plotTally(b,c,a)
 
 ##For saving in csv format. HDF5 preferible but not currently compatible with risk cluster
 #en = (tally_grid[2:end]+tally_grid[1:end-1])/2;

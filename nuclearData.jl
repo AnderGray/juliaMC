@@ -66,6 +66,23 @@ function (obj::Cross_section)(E :: Float64, Peturb :: Float64)
 
 end
 
+function (obj::Cross_section)(indx :: Int64, E :: Float64, Peturb :: Float64)
+
+    y0=obj.xs[indx];
+    y1=obj.xs[indx+1];
+    x0=obj.energy_grid[indx];
+    x1=obj.energy_grid[indx+1];
+
+    XS_e = y0+(E - x0)*(y1-y0)/(x1-x0);
+
+    XS_e = XS_e*Peturb          # purtubation of xs after interpolation
+
+    obj.last_xs_value = XS_e
+
+    return XS_e
+
+end
+
 
 @with_kw mutable struct Cross_section_Tendl
     mt :: Int32
@@ -137,6 +154,15 @@ function (obj :: Nuclide)(E :: Float64, Peturb)
     return T_micro_xs
 end
 
+function (obj :: Nuclide)(indx::Int64, E :: Float64, Peturb)
+
+    T_micro_xs = 0
+    for i = 1:length(obj.XS)
+        T_micro_xs += obj.XS[i](indx, E, Peturb[i])
+    end
+    obj.last_T_xs_value = T_micro_xs
+    return T_micro_xs
+end
 
 
 

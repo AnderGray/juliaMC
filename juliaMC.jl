@@ -251,8 +251,14 @@ function runFlySampling(sim :: juliaMC)
                 if norm(N_bank[o].xyz)>sim.Tally_batch.radius
                     N_bank[o].alive=false;
                 else
-                    k = findInter(N_bank[o].last_E, sim.Tally_batch.energy_bins);
-                    localTal[k] += N_bank[o].last_d*N_bank[o].wgt
+                    k = binarySearch(N_bank[o].E, sim.Tally_batch.energy_bins);
+                    N_bank[o].energyIndex = k
+                    m = N_bank[o].last_index
+                    if k ==-1
+                        N_bank[o].alive = false
+                        N_bank[o].wgt = 0;
+                    end
+                    localTal[m] += N_bank[o].last_d*N_bank[o].wgt
                 end
                 end
             o+=1

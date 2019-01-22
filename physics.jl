@@ -67,8 +67,9 @@ end
 function transportUQ(p :: Particle, perturb)
 
     E = p.E
+    ind = p.energyIndex
     # only difference to transport(). Perturbation passed right down to XS interpolator
-    Total_Macro = p.mat(E, perturb)
+    Total_Macro = p.mat(ind, E, perturb)
     d = -log(rand())/Total_Macro
 
     p.last_xyz = p.xyz
@@ -76,6 +77,7 @@ function transportUQ(p :: Particle, perturb)
     p.last_wgt = p.wgt
     p.last_uvw = p.uvw
     p.last_d = d
+    p.last_index = ind
 
     p.xyz=p.uvw*d
 
