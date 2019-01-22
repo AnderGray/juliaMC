@@ -64,7 +64,7 @@ function binarySearch(val :: Float64, A :: Array{Float64,1}, l :: Int, r :: Int)
         end
         return binarySearch(val, A, mid+1,r)
     end
-    return throw(UndefVarError(:binarySearchFailed))
+    return -1
 
 end
 

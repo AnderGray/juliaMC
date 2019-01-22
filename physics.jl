@@ -12,6 +12,11 @@ function transport(p :: Particle)
 
     E = p.E
     ind = p.energyIndex
+    #=
+    println("before")
+    println(ind)
+    println(E)
+    =#
     #Total_Macro = p.mat(E)                      # interpolation of XS and construction on MacroXS
     Total_Macro = p.mat(ind,E)
     d = -log(rand())/Total_Macro                # distance to next collision
@@ -22,6 +27,7 @@ function transport(p :: Particle)
     p.last_wgt = p.wgt
     p.last_uvw = p.uvw
     p.last_d = d
+    p.last_index = ind
 
     # new particle position. p.uvw always of unit length
     p.xyz=p.uvw*d
@@ -36,16 +42,18 @@ function transport(p :: Particle)
     if react == "elastic_scatter"
         p = scatter(p)
         #println("scatter at $(p.xyz)")
-
+#=
         if p.E < 1e6
             p.alive = false
             p.wgt = 0;
-            p.last_E = 1.42e8;          # cannot remember why I did this...
+            #p.last_E = 1.42e8;          # cannot remember why I did this...
             #println("Particle $(p.id) has lost too much energy at $(p.xyz)")
         end
+        =#
 
     elseif react == "absorption"
         p.alive = false
+        p.wgt=0
         p.last_reaction="absorption"
         #println("absorption at $(p.xyz)")
     else
@@ -82,16 +90,17 @@ function transportUQ(p :: Particle, perturb)
     if react == "elastic_scatter"
         p = scatter(p)
         #println("scatter at $(p.xyz)")
-
+        #=
         if p.E < 1e6
             p.alive = false
             p.wgt = 0;
             p.last_E = 1.42e8;
             #println("Particle $(p.id) has lost too much energy at $(p.xyz)")
         end
-
+        =#
     elseif react == "absorption"
         p.alive = false
+        p.wgt=0
         p.last_reaction="absorption"
 
         #println("absorption at $(p.xyz)")

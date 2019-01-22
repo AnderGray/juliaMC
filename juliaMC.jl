@@ -141,9 +141,20 @@ function runPar(sim :: juliaMC)
                 if norm(N_bank[o].xyz)>sim.Tally_batch.radius       # has left tally volume?
                     N_bank[o].alive=false;
                 else
-                    k = binarySearch(N_bank[o].last_E, sim.Tally_batch.energy_bins);   # selects which energy bin to score. Function can be found in maths.jl
+                    k = binarySearch(N_bank[o].E, sim.Tally_batch.energy_bins);   # selects which energy bin to score. Function can be found in maths.jl
                     N_bank[o].energyIndex = k
-                    localTal[k] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
+                    m = N_bank[o].last_index
+                    if k ==-1
+                        N_bank[o].alive = false
+                        N_bank[o].wgt = 0;
+                    end
+#=
+                    println("After")
+                    println(k)
+                    println(N_bank[o].E)
+                    println(N_bank[o].alive)
+                    =#
+                    localTal[m] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
                 end
                 end
             o+=1;
@@ -207,7 +218,7 @@ function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
     stds=0;
     simulation=0;
     sim=0;
-    gc()
+    #gc()
 
     return Global
 
@@ -226,11 +237,11 @@ function runFlySampling(sim :: juliaMC)
         localTal = zeros(length(sim.Tally_batch.energy_bins)-1)
 
         memLimit=10000;
-        N_bank = generate(sim.source,sim.material,memLimit)
+        N_bank = generate(sim.source,sim.material,memLimit,sim.grid)
         o = 1;
         for i=1:sim.n
             if i % memLimit == 0
-                N_bank = generate(sim.source,sim.material,memLimit)
+                N_bank = generate(sim.source,sim.material,memLimit,sim.grid)
                 o = 1
             end
             #perturb = rand(Truncated(Normal(1,0.5),0.3,100))

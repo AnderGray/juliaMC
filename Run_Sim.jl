@@ -42,7 +42,7 @@ absp2 = Cross_section(mt=2,reaction="absorption",energy_grid=en_grid, xs= xs.(en
 nuclide1 = Nuclide(Name="Fe56",XS=[scat1,absp1]);
 nuclide2 = Nuclide(Name="Fe54",XS=[scat2,absp2]);
 
-material1 = Material(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.6,0.6], density = 4.0,id=1);
+material1 = Material(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.6,0.6], density = 16.0,id=1);
 
 ## Energy grid for tally class
 tally_grid = [i for i=1e6:2e5:3e8];
@@ -58,13 +58,15 @@ a = @time runPar(simulation1);
 simulation1 = juliaMC(material=material1,n=100000, grid = en_grid, Tally_batch=tally1,n_batch=10)
 println("TMC")
 b = @time runTotalMonteCarlo(simulation1,100);
-
-simulation1 = juliaMC(material=material1,n=100000, grid = en_grid, Tally_batch=tally1,n_batch=100)
+#=
+simulation1 = juliaMC(material=material1,n=1000, grid = en_grid, Tally_batch=tally1,n_batch=10)
 println("FlySampling")
 c = @time runFlySampling(simulation1);
 
+=#
 #For creating plot
-plotTally(b,c,a)
+#plotTally(b,c)
+plotTally(b,a,a)
 
 ##For saving in csv format. HDF5 preferible but not currently compatible with risk cluster
 #en = (tally_grid[2:end]+tally_grid[1:end-1])/2;

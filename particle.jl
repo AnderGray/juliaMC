@@ -29,5 +29,6 @@
     last_wgt :: Float64 = 0
     last_reaction :: String = ""
     last_d :: Float64 = 0
+    last_index :: Int64 = -1
 
     end
