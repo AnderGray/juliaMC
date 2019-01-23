@@ -77,6 +77,7 @@ function transport(p :: Particle, Sample :: Array{Int64,1})
     #Total_Macro = p.mat(E)                      # interpolation of XS and construction on MacroXS
     #Total_Macro = p.mat(ind,E)
     temp = p.mat(ind, E, Sample)
+    #temp = p.mat(E, Sample)
     Total_Macro = temp[1]
     Total_bounds = temp[2]
     ran = rand()
@@ -259,8 +260,8 @@ function scatter(p :: Particle)
 
     #println("The sampled direction is $directions")
 
-
-    p.E = p.E - rand()*p.E;     # reduce energy by a random amount
+    p.E = p.E - rand()*p.E;
+    #p.E = p.E - rand(Uniform(0,0.2))*p.E;     # reduce energy by a random amount
     p.uvw = directions[:];
     p.last_reaction="scatter"
 

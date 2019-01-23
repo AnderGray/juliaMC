@@ -7,7 +7,7 @@
 @with_kw mutable struct Flux_tally
 
     n :: Int = 10                                           # This must be the number of batches in the simulation
-    radius :: Float64 = 3
+    radius :: Float64 = 1000
     centre :: Array{Float64,1} = [0,0,0]
     energy_bins :: Array{Float64,1} = [0.0,]                # The width of the bins to be tallied for flux
     Tally = zeros(length(energy_bins)-1)

@@ -58,7 +58,7 @@ Tall_batch: The Tally to be used in the simulation
 
         Tally = Flux_tally(n=n_batch, energy_bins = Tally_batch.energy_bins,radius = Tally_batch.radius)
 
-        new(n, n_batch, source, material, Tally_batch.energy_bins, Tally)
+        new(n, n_batch, source, material, grid, Tally)
     end
 
 end
@@ -149,13 +149,17 @@ function runPar(sim :: juliaMC, Choice :: Array{Int64,1})
                         N_bank[o].alive = false
                         N_bank[o].wgt = 0;
                     end
+                    #println(N_bank[o])
 #=
                     println("After")
                     println(k)
                     println(N_bank[o].E)
                     println(N_bank[o].alive)
                     =#
-                    localTal[m] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
+                    if m !=-1
+
+                        localTal[m] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
+                    end
                 end
                 end
             o+=1;

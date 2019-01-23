@@ -33,3 +33,15 @@
     last_index :: Int64 = -1
 
     end
+
+
+function dispInfo(p :: Particle)
+
+    println("reaction:  $p.last_reaction")
+    println("index:     $p.energyIndex")
+    println("energy:    $p.last_E")
+    println("d:         $p.last_d")
+    println("bounds:    $p.last_d_bounds")
+    println("alive:     $p.alive")
+
+end
