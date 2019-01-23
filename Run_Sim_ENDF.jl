@@ -32,8 +32,10 @@ include("juliaMC.jl");
 
 numFe = 613;
 numO = 641;
+XSDIR = "../tendlHDF5"
 
-energy = h5read("../data_formated/Fe056/Fe056_0000.h5","energy");
+
+energy = h5read("$XSDIR/Fe056/Fe056_0000.h5","energy");
 
 scatFe = zeros(numFe, length(energy));
 abspFe = zeros(numFe, length(energy));
@@ -52,9 +54,9 @@ for i =1:numFe
         nums = "0$i";
     end
     files = "Fe056_$nums.h5";
-    scatFe[i,:] = h5read("../data_formated/Fe056/$files","elastic");
-    abspFe[i,:] = h5read("../data_formated/Fe056/$files","absorption");
-    totalFe[i,:] = h5read("../data_formated/Fe056/$files","total");
+    scatFe[i,:] = h5read("$XSDIR/Fe056/$files","elastic");
+    abspFe[i,:] = h5read("$XSDIR/Fe056/$files","absorption");
+    totalFe[i,:] = h5read("$XSDIR/Fe056/$files","total");
 end
 
 for i =1:numO
@@ -66,9 +68,9 @@ for i =1:numO
         nums = "0$i";
     end
     files = "O016_$nums.h5";
-    scatO[i,:] = h5read("../data_formated/O016/$files","elastic");
-    abspO[i,:] = h5read("../data_formated/O016/$files","absorption");
-    totalO[i,:] = h5read("../data_formated/O016/$files","total");
+    scatO[i,:] = h5read("$XSDIR/O016/$files","elastic");
+    abspO[i,:] = h5read("$XSDIR/O016/$files","absorption");
+    totalO[i,:] = h5read("$XSDIR/O016/$files","total");
 end
 
 println("<------Nuclear Data read------>")
@@ -110,10 +112,10 @@ scatO = 0;
 abspO = 0;
 GC.gc();
 
-nuclide1 = Nuclide_Tendl(Name="Fe56",XS=[scat1,absp1],total_micro=total1,total_bounds=[totalMaxFe_xs,totalMinFe_xs]);
-nuclide2 = Nuclide_Tendl(Name="O16",XS=[scat2,absp2],total_micro=total2,total_bounds=[totalMaxO_xs,totalMinO_xs]);
+nuclide1 = Nuclide_Tendl(Name="Fe56",XS=[scat1,absp1],total_micro=total1,total_bounds=[totalMaxFe_xs,totalMinFe_xs], atomicWeight = 55.454479886265396);
+nuclide2 = Nuclide_Tendl(Name="O16",XS=[scat2,absp2],total_micro=total2,total_bounds=[totalMaxO_xs,totalMinO_xs], atomicWeight = 15.857525022762783);
 
-material1 = Material_Tendl(name="IronMixture", nucs=[nuclide1], atomic_density = [0.6], density = 10.0,id=1);
+material1 = Material_Tendl(name="IronMixture", nucs=[nuclide1], atomic_density = [0.4,0.6], density = 5.24,id=1);
 
 ## Energy grid for tally
 en_grid = [i for i=10e-5:5e4:2e8];

@@ -190,6 +190,7 @@ end
     last_T_xs_value :: Float64 = 0           # The last calculated XS value, so we don't have to interpolate again
     last_Total :: Float64 = 0
     last_Bounds :: Array{Float64,1} = [0.0,]
+    atomicWeight :: Float64 = 0
 end
 
 

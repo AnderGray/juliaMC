@@ -32,6 +32,8 @@
     last_d_bounds :: Array{Float64,1} = [0.0,0.0]
     last_index :: Int64 = -1
 
+    last_Atomic_Weight :: Float64 = 0
+
     end
 
 

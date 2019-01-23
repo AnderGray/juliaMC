@@ -102,7 +102,8 @@ function transport(p :: Particle, Sample :: Array{Int64,1})
 
     s = select(p.mat);                       # first select nuclide
     r = select(p.mat.nucs[s]);               # then reaction. Select() has been overloaded.
-    react = p.mat.nucs[s].XS[r].reaction
+    p.last_Atomic_Weight = p.mat.nucs[s].atomicWeight;
+    react = p.mat.nucs[s].XS[r].reaction;
 
     if react == "elastic_scatter"
         p = scatter(p)
@@ -211,7 +212,6 @@ function select(mat :: Material_Tendl)
     dist = Descrete_CDF(a,cdf_values)
     nad, selection = dist()
 
-
     #println("Selected nuclide is: $(nad.Name) and $selection")
 
     return selection
@@ -246,17 +246,17 @@ end
 
 function scatter(p :: Particle)
 
-    direction_Inclination = Uniform(0,2pi)          # Spherical coordinates for direction, the default is an
-    direction_Azamuthal = Uniform(0,pi)             # isotropic distribution. THIS COULD BE BIASED
+    direction_Inclination = Uniform(0,2*pi)          # Spherical coordinates for direction, the default is an
+    #direction_Azamuthal = Uniform(0,pi)             # isotropic distribution. THIS COULD BE BIASED
 
     d_Inc = rand(direction_Inclination)           # also be sampled here but will just be a point source for the time being
-    d_Az = rand(direction_Azamuthal)
+    d_Az = acos(1-2*rand())
 
     directions = zeros(3)
 
-    directions[1] = sin(d_Inc) * cos(d_Az)     # Conversion of the spherical coordinates that have been sampled to the
+    directions[1] = sin(d_Az) * cos(d_Inc)     # Conversion of the spherical coordinates that have been sampled to the
     directions[2] = sin(d_Az) * sin(d_Inc)     # carteesian used by particle. Here we have done this by vectorization
-    directions[3] = cos(d_Inc)                   # but is debatable if this is fast than looping in julia
+    directions[3] = cos(d_Az)                   # but is debatable if this is fast than looping in julia
 
     #println("The sampled direction is $directions")
 
