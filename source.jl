@@ -21,7 +21,7 @@ end
 @everywhere function generate(s :: Source, mat :: Material_Tendl, n :: Int64, grid :: Array{Float64,1})
 
     bank = Array{Particle,1}(UndefInitializer(),n)              # Initialization of particle bank array
-    for i in 1:n
+    for i = 1:n
         bank[i]=Particle(id=i, mat = mat)           # Loop that fills the bank will default neutrons
     end
 
@@ -36,11 +36,13 @@ end
     directions[:,2] = sin.(d_Az) .* sin.(d_Inc)     # carteesian used by particle. Here we have done this by vectorization
     directions[:,3] = cos.(d_Az)                   # but is debatable if this is fast than looping in julia
 
-    for i in 1:n
+    for i = 1:n
         bank[i].E = Energys[i]                      # Filling the particle bank with sampled information.
         bank[i].energyIndex = binarySearch(Energys[i], grid)
         bank[i].xyz = s.position
         bank[i].uvw = directions[i,:]
+        #println(bank[i].uvw)
+        #println(bank[i].energyIndex)
     end
 
     return bank

@@ -157,7 +157,7 @@ function runPar(sim :: juliaMC, Choice :: Array{Int64,1})
                     println(N_bank[o].alive)
                     =#
                     if m !=-1
-
+                        println(m)
                         localTal[m] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
                     end
                 end

@@ -29,7 +29,7 @@
     function Material(name :: String, nuclides :: Array{Any,1}, nucs :: Array{Nuclide,1}, atomic_density :: Array{Float64,1}, density :: Float64, id :: Int, n_nuclides :: Int64, last_macro :: Float64, T_atomic :: Float64, weights :: Array{Float64,1})
 
         T_atomic = sum(atomic_density)                                     # The Total Atomic denisty in atom/b-cm²
-        weights = density*atomic_density/T_atomic
+        weights = atomic_density/T_atomic
 
         # The above must be changed
 
@@ -59,6 +59,8 @@ function (obj :: Material)(E :: Float64)
         T_macro_xs += obj.weights[i].*obj.nucs[i](E)
     end
 
+    T_macro_xs = T_macro_xs*obj.denisty
+
     obj.last_macro = T_macro_xs
 
     return T_macro_xs
@@ -72,6 +74,8 @@ function (obj :: Material)(indx :: Int64, E :: Float64)
     for i = 1:obj.n_nuclides
         T_macro_xs += obj.weights[i].*obj.nucs[i](indx,E)
     end
+
+    T_macro_xs = T_macro_xs*obj.denisty
 
     obj.last_macro = T_macro_xs
 
@@ -88,6 +92,8 @@ function (obj :: Material)(E :: Float64, Peturb)
         T_macro_xs += obj.weights[i].*obj.nucs[i](E, Peturb[i,:])
     end
 
+    T_macro_xs = T_macro_xs*obj.denisty
+
     obj.last_macro = T_macro_xs
 
     return T_macro_xs
@@ -101,6 +107,8 @@ function (obj :: Material)(indx::Int64, E :: Float64, Peturb)
     for i = 1:obj.n_nuclides
         T_macro_xs += obj.weights[i].*obj.nucs[i](indx, E, Peturb[i,:])
     end
+
+    T_macro_xs = T_macro_xs*obj.denisty
 
     obj.last_macro = T_macro_xs
 
@@ -135,7 +143,7 @@ end
     function Material_Tendl(name :: String, nuclides :: Array{Any,1}, nucs :: Array{Nuclide_Tendl,1}, atomic_density :: Array{Float64,1}, density :: Float64, n_files :: Array{Int64,1}, id :: Int, n_nuclides :: Int64, last_macro :: Float64, last_macroBounds :: Array{Float64,1}, T_atomic :: Float64, weights :: Array{Float64,1})
 
         T_atomic = sum(atomic_density)                                     # The Total Atomic denisty in atom/b-cm²
-        weights = density*atomic_density/T_atomic
+        weights = atomic_density/T_atomic
 
         # The above must be changed
 
@@ -170,6 +178,10 @@ function (obj :: Material_Tendl)(E :: Float64, Sample :: Array{Int64,1})
         T_macro_xs += a[1]
         bounds +=a[2]
     end
+
+    T_macro_xs = T_macro_xs * obj.density
+    bounds = bounds*obj.density
+
     obj.last_macro = T_macro_xs
     obj.last_macroBounds = bounds
 
@@ -187,6 +199,9 @@ function (obj :: Material_Tendl)(indx::Int64, E :: Float64, Sample :: Array{Int6
         T_macro_xs += a[1]
         bounds +=a[2]
     end
+
+    T_macro_xs = T_macro_xs * obj.density
+    bounds = bounds*obj.density
 
     obj.last_macro = T_macro_xs
     obj.last_macroBounds = bounds

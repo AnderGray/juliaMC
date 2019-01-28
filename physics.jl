@@ -106,7 +106,7 @@ function transport(p :: Particle, Sample :: Array{Int64,1})
     react = p.mat.nucs[s].XS[r].reaction;
 
     if react == "elastic_scatter"
-        p = scatter(p)
+        p = scatterOpenMC(p)
         #println("scatter at $(p.xyz)")
 #=
         if p.E < 1e6
@@ -145,11 +145,11 @@ function transportUQ(p :: Particle, Sample)
 
     p.last_xyz = p.xyz
     p.last_E = E
+    p.last_index = ind
     p.last_wgt = p.wgt
     p.last_uvw = p.uvw
     p.last_d = d
     p.last_d_bounds = d_bounds
-    p.last_index = ind
 
     p.xyz=p.uvw*d
 
@@ -158,6 +158,7 @@ function transportUQ(p :: Particle, Sample)
 
     s = select(p.mat);
     r = select(p.mat.nucs[s]);
+    p.last_Atomic_Weight = p.mat.nucs[s].atomicWeight;
 
     react = p.mat.nucs[s].XS[r].reaction
 
@@ -196,13 +197,19 @@ function select(mat :: Material_Tendl)
     n=length(mat.nucs)
     cdf_values = zeros(n+1)
 
+
+    ##
+    #   Problem here! Change descrete cdf class!
+    ##
     # cdf values taken to be the macroscopic XS of each nuclide
     for i =1:n
         cdf_values[i+1] = mat.nucs[i].last_T_xs_value.*mat.weights[i].+cdf_values[i]
     end
     #cdf_values=filter(e->e!=0.0,cdf_values)
+    println(cdf_values)
     a=sum(cdf_values)
     cdf_values=cdf_values./a
+    println(cdf_values)
     # Descrete cdf created and sampled
     #println(cdf_values)
     a = Array{String, 1}(UndefInitializer(),n)          # intitalization of a array of strings
@@ -263,6 +270,46 @@ function scatter(p :: Particle)
     p.E = p.E - rand()*p.E;
     #p.E = p.E - rand(Uniform(0,0.2))*p.E;     # reduce energy by a random amount
     p.uvw = directions[:];
+    p.last_reaction="scatter"
+
+    return p
+
+end
+
+function scatterOpenMC(p :: Particle)
+
+    E = p.E;                    #Lab Frame energy
+    awr = p.last_Atomic_Weight;       #Atomic wieght ratio of traget
+    uvw = p.uvw;                #Lab direction
+    vel = sqrt(E);              #Lab Speed
+
+    v_n = vel*uvw               #Lab frame velocity
+    v_t = [0,0,0];                    #Target velocity
+
+    #centre of mass velocity
+    v_cm = (v_n + awr .* v_t)./(awr + 1.0);
+
+
+    v_n = v_n - v_cm;   #Neutron vel in CoM
+    vel = norm(v_n);    #Neutron speed in CoM
+    mu_cm = 2.0 *rand() - 1.0;   #isotropic
+    u_cm = v_n/vel;     #Direction in CoM
+
+    phi = 2.0 *pi*rand();
+
+    ub = rotate_angle(u_cm, mu_cm, phi);
+    v_n =  vel * ub;
+
+    v_n = v_n + v_cm;
+
+    E = dot(v_n,v_n);
+    vel = sqrt(E);
+
+    u = v_n/vel;
+
+    p.E = E;
+    p.uvw = u;
+
     p.last_reaction="scatter"
 
     return p
