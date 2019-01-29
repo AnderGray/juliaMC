@@ -7,7 +7,7 @@
 @with_kw mutable struct Flux_tally
 
     n :: Int = 10                                           # This must be the number of batches in the simulation
-    radius :: Float64 = 1000
+    radius :: Float64 = 100
     centre :: Array{Float64,1} = [0,0,0]
     energy_bins :: Array{Float64,1} = [0.0,]                # The width of the bins to be tallied for flux
     Tally = zeros(length(energy_bins)-1)
@@ -43,6 +43,21 @@ function plotTally(Tal1 :: Flux_tally, Tal2 :: Flux_tally, Tal3 :: Flux_tally)
     # Tal2 == FLY
     # Tal3 == Vinila
     en = (Tal1.energy_bins[2:end]+Tal1.energy_bins[1:end-1])/2;
+
+
+    for i = 1:length(Tal1.Tally)
+
+        if Tal1.Tally[i] == 0.0
+            Tal1.Tally[i] = eps();
+        end
+        if Tal2.Tally[i] == 0.0
+            Tal2.Tally[i] = eps();
+        end
+        if Tal3.Tally[i] == 0.0
+            Tal3.Tally[i] = eps();
+        end
+
+    end
 
     a=Tal2.Tally./Tal1.Tally;
     b=Tal2.Tally./Tal3.Tally;
@@ -92,15 +107,15 @@ function plotTally(Tal1 :: Flux_tally, Tal2 :: Flux_tally, Tal3 :: Flux_tally)
     plt1 = plot!(en,a, title="means FLY/TMC", linewidth = 2, label="means");
     #plt2 = plot(en,b, title="stds FLY/TMC");
 
-    plt2 = plot(en,Tal1.Tally, ribbon=(Tal1.std,Tal1.std), title="Flux plots", fillalpha = 0.5, label = "TMC", linewidth = 2);
-    plt2 = plot!(en,Tal2.Tally, linewidth = 2, ribbon=(Tal2.std,Tal2.std), fillalpha = 0.5, label="Fly");
+    plt2 = plot(en,Tal1.Tally, ribbon=(Tal1.std,Tal1.std), title="Flux plots", fillalpha = 0.5, label = "TMC", linewidth = 2, xaxis = :log, yaxis = :log);
+    plt2 = plot!(en,Tal2.Tally, linewidth = 2, ribbon=(Tal2.std,Tal2.std), fillalpha = 0.5, label="Fly", xaxis = :log, yaxis = :log);
 
     plt3 = plot(en, y, ribbon=(stds2,stds2),fillalpha = 0.5,label="CoV + 1");
     plt3 = plot!(en, b, title="means FLY/Vanila", linewidth = 2,label="means");
 
 
-    plt4 = plot(en,Tal3.Tally, ribbon=(Tal3.std,Tal3.std), title="Flux plots", fillalpha = 0.5, label = "Vanila", linewidth = 2);
-    plt4 = plot!(en,Tal2.Tally, linewidth = 2, ribbon=(Tal2.std,Tal2.std), fillalpha = 0.5, label="Fly");
+    plt4 = plot(en,Tal3.Tally, ribbon=(Tal3.std,Tal3.std), title="Flux plots", fillalpha = 0.5, label = "Vanila", linewidth = 2, xaxis = :log , yaxis = :log);
+    plt4 = plot!(en,Tal2.Tally, linewidth = 2, ribbon=(Tal2.std,Tal2.std), fillalpha = 0.5, label="Fly", xaxis = :log , yaxis = :log);
 
     fig=plot(plt1,plt2,plt3,plt4, dpi=300, size=(1000,1000))
 

@@ -82,6 +82,7 @@ function transport(p :: Particle, Sample :: Array{Int64,1})
     Total_bounds = temp[2]
     ran = rand()
     d = -log(ran)/Total_Macro
+    #println(d)
     d_bounds = -log(ran)./Total_bounds
     d_bounds = sort(d_bounds)
 
@@ -95,12 +96,15 @@ function transport(p :: Particle, Sample :: Array{Int64,1})
     p.last_index = ind
 
     # new particle position. p.uvw always of unit length
-    p.xyz=p.uvw*d
+    p.xyz+=p.uvw*d
 
 
     #println("Particle has traveld $d and is now at $(p.xyz)")
+    #println("particle Energy:")
+    #println(E)
 
     s = select(p.mat);                       # first select nuclide
+    #println(s)
     r = select(p.mat.nucs[s]);               # then reaction. Select() has been overloaded.
     p.last_Atomic_Weight = p.mat.nucs[s].atomicWeight;
     react = p.mat.nucs[s].XS[r].reaction;
@@ -155,7 +159,6 @@ function transportUQ(p :: Particle, Sample)
 
 
     #println("Particle has traveld $d and is now at $(p.xyz)")
-
     s = select(p.mat);
     r = select(p.mat.nucs[s]);
     p.last_Atomic_Weight = p.mat.nucs[s].atomicWeight;
@@ -203,13 +206,11 @@ function select(mat :: Material_Tendl)
     ##
     # cdf values taken to be the macroscopic XS of each nuclide
     for i =1:n
-        cdf_values[i+1] = mat.nucs[i].last_T_xs_value.*mat.weights[i].+cdf_values[i]
+        cdf_values[i+1] = mat.nucs[i].last_T_xs_value.*mat.weights[i]/mat.last_summed_macro
+        #cdf_values[i+1] = mat.weights[i]
     end
     #cdf_values=filter(e->e!=0.0,cdf_values)
-    println(cdf_values)
-    a=sum(cdf_values)
-    cdf_values=cdf_values./a
-    println(cdf_values)
+
     # Descrete cdf created and sampled
     #println(cdf_values)
     a = Array{String, 1}(UndefInitializer(),n)          # intitalization of a array of strings
@@ -232,10 +233,12 @@ function select(nuc :: Nuclide_Tendl)
 
     #cdf constructed from microscopic XS of reactions
     for i =1:n
-        cdf_values[i+1] = nuc.XS[i].last_xs_value+cdf_values[i]
+        cdf_values[i+1] = nuc.XS[i].last_xs_value ./ nuc.last_T_xs_value
+        #println(nuc.XS[i].last_xs_value)
     end
+
+    #println(cdf_values)
     #cdf_values=filter(e->e!=0.0,cdf_values)
-    cdf_values=cdf_values/nuc.last_T_xs_value
     a = Array{String, 1}(UndefInitializer(),n)          # intitalization of a array of strings
     for i =1:n
         a[i]=nuc.XS[i].reaction
@@ -265,9 +268,12 @@ function scatter(p :: Particle)
     directions[2] = sin(d_Az) * sin(d_Inc)     # carteesian used by particle. Here we have done this by vectorization
     directions[3] = cos(d_Az)                   # but is debatable if this is fast than looping in julia
 
+    awr = p.last_Atomic_Weight;
+    e_loss = ((awr-1)/(awr+1))^2;
+
     #println("The sampled direction is $directions")
 
-    p.E = p.E - rand()*p.E;
+    p.E = p.E - (e_loss*rand()*p.E);
     #p.E = p.E - rand(Uniform(0,0.2))*p.E;     # reduce energy by a random amount
     p.uvw = directions[:];
     p.last_reaction="scatter"

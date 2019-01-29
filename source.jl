@@ -26,7 +26,7 @@ end
     end
 
     # Delta dirac in energy
-    Energys = 14.2e7*ones(n)#rand(s.E_distribution, m)             # Sampling of the Sources energy and direction distributions, position can
+    Energys = 14.2e6*ones(n)#rand(s.E_distribution, m)             # Sampling of the Sources energy and direction distributions, position can
     d_Inc = rand(s.direction_Inclination,n)         # also be sampled here but will just be a point source for the time being
     d_Az = acos.(1 .- 2*rand(n))
 

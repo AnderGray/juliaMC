@@ -157,7 +157,15 @@ function runPar(sim :: juliaMC, Choice :: Array{Int64,1})
                     println(N_bank[o].alive)
                     =#
                     if m !=-1
+#=
+                        println("energy")
+                        println(N_bank[o].last_E)
+                        println(N_bank[o].last_d)
+                        println(N_bank[o].wgt )
+                        println("tally:")
                         println(m)
+                        println(sim.Tally_batch.energy_bins[m])
+                        =#
                         localTal[m] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
                     end
                 end
@@ -170,8 +178,10 @@ function runPar(sim :: juliaMC, Choice :: Array{Int64,1})
         #println(localTal)
     end
 
+    #println(Tal)
     Tal=Tal./(sim.Tally_batch.volume*sim.n);                    # normalize flux
     #plot(en, Tal)
+    #println(Tal)
 
     Global_tally = Flux_tally(energy_bins=sim.Tally_batch.energy_bins,n=1);     # create new tally instance using global tally statistics
     for i = 1:length(sim.Tally_batch.Tally[:,1])
@@ -262,7 +272,7 @@ function runFlySampling(sim :: juliaMC)
                 choice[pp] = rand(DiscreteUniform(1,sim.material.n_files[pp]))
             end
             while N_bank[o].alive == true
-                N_bank[o] = transportUQ(N_bank[o],choice);     # transportUQ() function in physics.jl. Inputs a particle and random sample matrix
+                N_bank[o] = transport(N_bank[o],choice);     # transportUQ() function in physics.jl. Inputs a particle and random sample matrix
                 if norm(N_bank[o].xyz)>sim.Tally_batch.radius
                     N_bank[o].alive=false;
                 else
@@ -274,7 +284,18 @@ function runFlySampling(sim :: juliaMC)
                         N_bank[o].alive = false
                         N_bank[o].wgt = 0;
                     end
-                    localTal[m] += N_bank[o].last_d*N_bank[o].wgt
+                    if m !=-1
+#=
+                        println("energy")
+                        println(N_bank[o].last_E)
+                        println(N_bank[o].last_d)
+                        println(N_bank[o].wgt )
+                        println("tally:")
+                        println(m)
+                        println(sim.Tally_batch.energy_bins[m])
+                        =#
+                        localTal[m] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
+                    end
                 end
                 end
             o+=1

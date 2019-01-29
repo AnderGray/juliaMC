@@ -115,10 +115,10 @@ GC.gc();
 nuclide1 = Nuclide_Tendl(Name="Fe56",XS=[scat1,absp1],total_micro=total1,total_bounds=[totalMaxFe_xs,totalMinFe_xs], atomicWeight = 55.454479886265396);
 nuclide2 = Nuclide_Tendl(Name="O16",XS=[scat2,absp2],total_micro=total2,total_bounds=[totalMaxO_xs,totalMinO_xs], atomicWeight = 15.857525022762783);
 
-material1 = Material_Tendl(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.4,0.6], density = 5.24,id=1);
+material1 = Material_Tendl(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_density = [0.4,0.6], density = 0.1,id=1);
 
 ## Energy grid for tally
-en_grid = [i for i=1e5:5e4:2e8];
+en_grid = [i for i=1e4:5e4:2e7];
 tally1 = Flux_tally(energy_bins = en_grid)
 
 ## material and tally are properties of the juliaMC class
@@ -130,7 +130,7 @@ a = @time runPar(simulation1,[1,1]);
 
 simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10,grid = energy)
 println("TMC")
-b = @time runTotalMonteCarlo(simulation1,100);
+b = @time runTotalMonteCarlo(simulation1,1000);
 
 simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=100,grid = energy)
 println("FlySampling")

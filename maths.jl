@@ -25,8 +25,11 @@ end
 function (obj :: Descrete_CDF)()
 
     sample = rand()
-    println(obj.weights)
-    i=binarySearch(sample,obj.weights)
+    #println(sample)
+    #println(obj.weights)
+    cdf_vals = cumsum(obj.weights)
+    #println(cdf_vals)
+    i=binarySearch(sample,cdf_vals)
 
     return obj.members[i], i
 

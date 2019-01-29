@@ -211,7 +211,7 @@ function (obj :: Nuclide_Tendl)(E :: Float64, Sample :: Int64)
     obj.last_Total=realTotal
     obj.last_Bounds=bounds
 
-    return realTotal, bounds
+    return realTotal, bounds, T_micro_xs
 end
 
 function (obj :: Nuclide_Tendl)(indx::Int64, E :: Float64, Sample :: Int64)
@@ -231,7 +231,7 @@ function (obj :: Nuclide_Tendl)(indx::Int64, E :: Float64, Sample :: Int64)
     obj.last_Total=realTotal
     obj.last_Bounds=bounds
 
-    return realTotal, bounds
+    return realTotal, bounds, T_micro_xs
 end
 
 # NOT USING THE BELOW
