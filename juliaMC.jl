@@ -54,7 +54,7 @@ Tall_batch: The Tally to be used in the simulation
 
 
     #Constructor
-    function juliaMC(n :: Int64, n_batch :: Int64, source :: Source, material :: Material_Tendl, grid :: Array{Float64,1}, Tally_batch :: Flux_tally)
+    function juliaMC(n :: Int64, n_batch :: Int64, source :: Source, material :: Material_Tendl, grid :: Array{Float64,1}, Tally_batch :: Flux_tally_pbox)
 
         Tally = Flux_tally(n=n_batch, energy_bins = Tally_batch.energy_bins,radius = Tally_batch.radius)
 
@@ -201,7 +201,7 @@ end
 function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
 
     m = length(sim.Tally_batch.energy_bins)-1
-    Global = Flux_tally(energy_bins=sim.Tally_batch.energy_bins,n=1)
+    Global = Flux_tally_pbox(energy_bins=sim.Tally_batch.energy_bins,n=1)
 
     means = zeros(m,n)
     stds = zeros(m,n)
@@ -230,8 +230,15 @@ function runTotalMonteCarlo(sim :: juliaMC , n :: Int64)
         stds[:,i] = Tally.std
     end
     for l=1:m
+        upper, upperindx = findmax(means[l,:]);
+        lower, lowerindx = findmin(means[l,:]);
         Global.Tally[l] = mean(means[l,:])
-        Global.std[l] = sqrt(mean(stds[l,:].^2) + std(means[l,:]).^2)       # TMC uncertainty
+        #Global.std[l] = sqrt(mean(stds[l,:].^2) + std(means[l,:]).^2)       # TMC uncertainty
+        Global.std[l] = std(means[l,:])       # TMC uncertainty
+        Global.Tally_bounds[1,l] = lower;
+        Global.Tally_bounds[2,l] = upper;
+        Global.std_bounds[1,l] = stds[l,lowerindx]
+        Global.std_bounds[2,l] = stds[l,upperindx]
     end
 
     ## removing memory. gc() is for garbage collection in V0.6, not sure about V1.0
@@ -252,11 +259,15 @@ function runFlySampling(sim :: juliaMC)
 
     #en = (sim.Tally_batch.energy_bins[2:end]+sim.Tally_batch.energy_bins[1:end-1])/2
     Tal = SharedArray{Float64,2}(length(sim.Tally_batch.energy_bins)-1,sim.n_batch)
+    Tal_upper = SharedArray{Float64,2}(length(sim.Tally_batch.energy_bins)-1,sim.n_batch)
+    Tal_lower = SharedArray{Float64,2}(length(sim.Tally_batch.energy_bins)-1,sim.n_batch)
 
     @sync @distributed for j=1:sim.n_batch
         #simulation = deepcopy(sim)
         #N_bank = generate(sim.source,sim.material,sim.n)
         localTal = zeros(length(sim.Tally_batch.energy_bins)-1)
+        upper = zeros(length(localTal))
+        lower = zeros(length(localTal))
 
         memLimit=10000;
         N_bank = generate(sim.source,sim.material,memLimit,sim.grid)
@@ -295,23 +306,33 @@ function runFlySampling(sim :: juliaMC)
                         println(sim.Tally_batch.energy_bins[m])
                         =#
                         localTal[m] += N_bank[o].last_d*N_bank[o].wgt                   # scores local tally
+                        lower[m] += N_bank[o].last_d_bounds[1]*N_bank[o].wgt
+                        upper[m] += N_bank[o].last_d_bounds[2]*N_bank[o].wgt
                     end
                 end
                 end
             o+=1
             end
         Tal[:,j] = localTal;
+        Tal_upper[:,j] = upper;
+        Tal_lower[:,j] = lower;
         println("Finished Batch $j")
         #println(localTal)
     end
 
     Tal=Tal./(sim.Tally_batch.volume*sim.n);
-    Global_tally = Flux_tally(energy_bins=sim.Tally_batch.energy_bins,n=1)
+    Tal_upper=Tal_upper./(sim.Tally_batch.volume*sim.n);
+    Tal_lower=Tal_lower./(sim.Tally_batch.volume*sim.n);
+    Global_tally = Flux_tally_pbox(energy_bins=sim.Tally_batch.energy_bins,n=1)
 
     for i = 1:length(sim.Tally_batch.Tally[:,1])
 
         Global_tally.Tally[i] = mean(Tal[i,:])
         Global_tally.std[i] = std(Tal[i,:])
+        Global_tally.Tally_bounds[1,i] = mean(Tal_lower[i,:])
+        Global_tally.Tally_bounds[2,i] = mean(Tal_upper[i,:])
+        Global_tally.std_bounds[1,i] = std(Tal_lower[i,:])
+        Global_tally.std_bounds[2,i] = std(Tal_upper[i,:])
 
     end
     #plot!(en, Tal)

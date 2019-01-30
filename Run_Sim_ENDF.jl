@@ -119,7 +119,7 @@ material1 = Material_Tendl(name="IronMixture", nucs=[nuclide1,nuclide2], atomic_
 
 ## Energy grid for tally
 en_grid = [i for i=1e4:5e4:2e7];
-tally1 = Flux_tally(energy_bins = en_grid)
+tally1 = Flux_tally_pbox(energy_bins = en_grid)
 
 ## material and tally are properties of the juliaMC class
 
@@ -132,12 +132,12 @@ simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=10,
 println("TMC")
 b = @time runTotalMonteCarlo(simulation1,1000);
 
-simulation1 = juliaMC(material=material1,n=10000, Tally_batch=tally1,n_batch=100,grid = energy)
+simulation1 = juliaMC(material=material1,n=100000, Tally_batch=tally1,n_batch=100,grid = energy)
 println("FlySampling")
 c = @time runFlySampling(simulation1);
 
 #For creating plot
-plotTally(b,c,a)
+plotTally_pbox(b,c,a)
 
 #For saving in csv format. HDF5 preferible but not currently compatible with risk cluster
 #en = (tally_grid[2:end]+tally_grid[1:end-1])/2;
