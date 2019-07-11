@@ -326,6 +326,6 @@ function plotTally_pbox(Tal1 :: Flux_tally_pbox, Tal2 :: Flux_tally_pbox)
     fig=plot(plt1,plt2,plt3,plt4, dpi=300, size=(1000,1000))
 
     display(fig)
-    savefig(fig,"ResultTest.png")
+    #savefig(fig,"ResultTest.png")
 
 end

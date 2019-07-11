@@ -18,13 +18,7 @@ using Distributed
 using SharedArrays
 using HDF5
 @everywhere using LinearAlgebra             #@everywhere for distributed computing
-include("juliaMC.jl");
-
-
-
-# Function for Crossections, it is a linearly decreasing function with a gausian + cosine mixture
-# A defines the mean of the gausian, shifts resonance peaks
-
+include("../src/juliaMC.jl");
 
 
 ## Two Crossections and 2 Nuclides. Crossections are properties of nuclides,
@@ -32,7 +26,7 @@ include("juliaMC.jl");
 
 numFe = 613;
 numO = 641;
-XSDIR = "../tendlHDF5"
+XSDIR = "../../tendlHDF5"
 
 
 energy = h5read("$XSDIR/Fe056/Fe056_0000.h5","energy");

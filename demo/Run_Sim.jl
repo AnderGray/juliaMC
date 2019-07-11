@@ -12,10 +12,11 @@
 #
 #           By: Ander Gray,         University of Liverpool, Culham Centre for Fusion Energy
 ####
+
 using Distributed
 using SharedArrays
 @everywhere using LinearAlgebra             #@everywhere for distributed computing
-include("juliaMC.jl");
+include("../src/juliaMC.jl");
 
 
 
