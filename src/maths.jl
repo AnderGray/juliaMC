@@ -1,6 +1,6 @@
 ####
 #
-#   This script conatains an empirical cdf class and sampler + very simple search algorithm
+#   This script conatains an empirical cdf class and sampler with a simple search algorithm
 #
 #   Julia Version: V1.0
 ####
@@ -19,7 +19,7 @@
     end
 =#
 end
-# A simple sampler for the cdf class. Returns one of the elements with probability of the wights
+# A simple sampler for the cdf class. Returns one of the elements with probability of the weights
 # This is a function that is unique to the Descrete_CDF class, in julia this is the only way to tie a
 # function to an object.
 function (obj :: Descrete_CDF)()
