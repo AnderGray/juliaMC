@@ -32,7 +32,7 @@ end
 
 
 
-# Function for easy plotting of tally, here we will find the centre of thebins to plot against
+# Function for easy plotting of tally, here we will find the centre of the bins to plot against
 
 function plotTally(Tal :: Flux_tally)
 
