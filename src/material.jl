@@ -7,10 +7,10 @@
 @with_kw mutable struct Material
 
     # Properties of the Material
-    # Manditory are: nuclides, atomic_density and density
+    # Nuclides, atomic_density and density are mandatory
 
     name :: String                                                         # Name of material
-    nuclides :: Array{Any,1} = ["",:]                                      # Array of Nuclides names contained in the material
+    nuclides :: Array{Any,1} = ["",:]                                      # Array of Nuclide names contained in the material
     nucs :: Array{Nuclide,1}                                               # Array of Nuclides contained in the material
     atomic_density :: Array{Float64,1}                                     # The Atomic densities of the nuclides in atom/b-cm²
     density :: Float64                                                     # The Total Density of the material in g/cm³
@@ -83,7 +83,7 @@ function (obj :: Material)(indx :: Int64, E :: Float64)
 
 end
 
-# Passing interpolation request nuclides class and storing result for ad hoc sampling
+# Passing interpolation request to nuclides class and storing result for ad hoc sampling
 function (obj :: Material)(E :: Float64, Peturb)
 
     T_macro_xs=0
@@ -120,10 +120,10 @@ end
 @with_kw mutable struct Material_Tendl
 
     # Properties of the Material
-    # Manditory are: nuclides, atomic_density and density
+    # Nuclides, atomic_density and density are mandatory
 
     name :: String                                                         # Name of material
-    nuclides :: Array{Any,1} = ["",:]                                      # Array of Nuclides names contained in the material
+    nuclides :: Array{Any,1} = ["",:]                                      # Array of Nuclide names contained in the material
     nucs :: Array{Nuclide_Tendl,1}                                               # Array of Nuclides contained in the material
     atomic_density :: Array{Float64,1}                                     # The Atomic densities of the nuclides in atom/b-cm²
     density :: Float64                                                     # The Total Density of the material in g/cm³
@@ -167,7 +167,7 @@ end
 
     end
 
-# Passing interpolation request nuclides class and storing result
+# Passing interpolation request to nuclides class and storing result
 
 # Passing interpolation request nuclides class and storing result for ad hoc sampling
 function (obj :: Material_Tendl)(E :: Float64, Sample :: Array{Int64,1})
