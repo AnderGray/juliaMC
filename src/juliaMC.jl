@@ -37,7 +37,7 @@ material: The material to be used in the simulation. Only one can be used for no
 
 N_bank: An array of particles that is used for the simulation. This is generated using the generate() function, see source.jl However this will probably need to be changed due to batching. Either 2 dim array of columbs = n_batch or that the particles are generated at the begining of run().
 
-Tall_batch: The Tally to be used in the simulation
+Tally_batch: The Tally to be used in the simulation
 
 @with_kw is for defining default values for properties of a class
 
