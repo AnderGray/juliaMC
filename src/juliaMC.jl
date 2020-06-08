@@ -39,7 +39,7 @@ N_bank: An array of particles that is used for the simulation. This is generated
 
 Tally_batch: The Tally to be used in the simulation
 
-@with_kw is for defining default values for properties of a class
+@with_kw is a Julia macro for defining default values for properties of a class
 
 =#
 @everywhere @with_kw struct juliaMC
